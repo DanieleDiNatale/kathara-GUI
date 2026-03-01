@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kathara Network Designer - Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="toolbar">
+            <div class="toolbar-section">
+                <h1>Kathara Web GUI</h1>
+            </div>
+            <div class="toolbar-section devices">
+                <span class="label">DEVICES:</span>
+                <button class="device-btn router" data-type="router">ROUTER</button>
+                <button class="device-btn switch" data-type="switch">SWITCH</button>
+                <button class="device-btn pc" data-type="pc">PC</button>
+                <button class="device-btn hub" data-type="hub">HUB</button>
+                <button class="device-btn cloud" data-type="cloud">CLOUD</button>
+            </div>
+            <div class="toolbar-section">
+                <button class="action-btn connect" id="connectModeBtn">CONNECT</button>
+                <button class="action-btn delete" id="deleteBtn">DELETE</button>
+            </div>
+            <div class="toolbar-section">
+                <button class="action-btn new" id="resetBtn">NEW</button>
+                <button class="action-btn start" id="startBtn">START</button>
+                <button class="action-btn stop" id="stopBtn">STOP</button>
+                <a href="/guide" class="action-btn guide">GUIDE</a>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="panel device-panel">
+                    <h3>DEVICE PROPERTIES</h3>
+                    <div class="property" id="selectedName">
+                        <span class="property-label">Name:</span>
+                        <span class="property-value">-</span>
+                    </div>
+                    <div class="property" id="selectedType">
+                        <span class="property-label">Type:</span>
+                        <span class="property-value">-</span>
+                    </div>
+                    <div class="property" id="selectedPorts">
+                        <span class="property-label">Ports:</span>
+                        <span class="property-value">-</span>
+                    </div>
+                    <div class="property" id="selectedIP">
+                        <span class="property-label">IP:</span>
+                        <span class="property-value">-</span>
+                    </div>
+                    <div class="property" id="selectedGateway">
+                        <span class="property-label">Gateway:</span>
+                        <span class="property-value">-</span>
+                    </div>
+                    <button class="btn primary" id="setIpBtn" style="display:none;">SET IP</button>
+                </div>
+                
+                <div class="panel">
+                    <h3>CONFIGURATION</h3>
+                    <textarea id="deviceConfig" placeholder="Enter startup commands..."></textarea>
+                    <button class="btn primary" id="saveConfigBtn" style="display:none;">SAVE CONFIG</button>
+                </div>
+                
+                <div class="panel">
+                    <h3>CABLE TYPE</h3>
+                    <select id="cableType">
+                        <option value="copper-straight">● Copper Straight</option>
+                        <option value="copper-cross">● Copper Cross</option>
+                        <option value="fiber">● Fiber</option>
+                        <option value="serial">● Serial</option>
+                        <option value="phone">● Phone</option>
+                        <option value="coaxial">● Coaxial</option>
+                    </select>
+                </div>
+                
+                <div class="panel">
+                    <h3>LAB SETTINGS</h3>
+                    <div class="form-group">
+                        <label>Lab Name:</label>
+                        <input type="text" id="labName" value="my_lab">
+                    </div>
+                    <button class="btn primary" id="exportBtn">EXPORT</button>
+                    <button class="btn secondary" id="listBtn">LIST DEVICES</button>
+                </div>
+                
+                <div class="panel">
+                    <h3>CONNECT TO DEVICE</h3>
+                    <select id="deviceSelect">
+                        <option value="">Select device...</option>
+                    </select>
+                    <button class="btn secondary" id="connectBtn">CONNECT</button>
+                </div>
+            </aside>
+
+            <main class="canvas-container">
+                <canvas id="topologyCanvas"></canvas>
+            </main>
+
+            <aside class="properties-panel">
+                <div class="panel connections-panel">
+                    <h3>CONNECTIONS</h3>
+                    <div id="connectionsList" class="connections-list"></div>
+                </div>
+                
+                <div class="panel console-panel">
+                    <h3>CONSOLE</h3>
+                    <div id="console" class="console"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

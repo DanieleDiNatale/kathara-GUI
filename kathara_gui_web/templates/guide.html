@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guida Kathara - Reti di Calcolatori</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='guide.css') }}">
+</head>
+<body>
+    <header>
+        <h1>📚 Guida Kathara - Reti di Calcolatori</h1>
+        <a href="/" class="back-btn">← Torna alla GUI</a>
+    </header>
+    
+    <main>
+        <section id="introduzione">
+            <h2>Introduzione a Kathara</h2>
+            <p>Kathara è un emulatore di rete basato su Docker che permette di creare scenari di rete realistici. È ampiamente utilizzato per esercitazioni CCNA e per simulare reti aziendali.</p>
+            <p><strong>Struttura base:</strong> Ogni lab è una cartella con file di configurazione.</p>
+        </section>
+
+        <section id="struttura">
+            <h2>📁 Struttura di un Lab</h2>
+            <pre>mio_lab/
+├── lab.conf          # Topologia della rete
+├── PC1.startup       # Configurazione PC1
+├── Router1.startup   # Configurazione Router1
+└── ...</pre>
+        </section>
+
+        <section id="esercizio1">
+            <h2>📝 Esercizio 1: Rete Semplice (2 PC)</h2>
+            <h3>Situazione</h3>
+            <p>Creare una rete con 2 PC collegati direttamente via cavo cross-over.</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+PC2[0]=A</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.1/24 dev eth0</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.1.2/24 dev eth0</pre>
+            <p><strong>Verifica:</strong> Ping da PC1 a PC2 (e viceversa)</p>
+        </section>
+
+        <section id="esercizio2">
+            <h2>📝 Esercizio 2: Rete con Hub</h2>
+            <h3>Situazione</h3>
+            <p>2 PC e 1 Hub, tutti nella stessa rete.</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+PC2[0]=A
+Hub1[0]=A</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.1/24 dev eth0</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.1.2/24 dev eth0</pre>
+            <h3>Hub1.startup</h3>
+            <pre>(nessuna configurazione)</pre>
+        </section>
+
+        <section id="esercizio3">
+            <h2>📝 Esercizio 3: Rete con Switch</h2>
+            <h3>Situazione</h3>
+            <p>3 PC collegati a uno Switch nella stessa rete.</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+PC2[0]=A
+PC3[0]=A
+Switch1[0]=A</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.10/24 dev eth0</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.1.20/24 dev eth0</pre>
+            <h3>PC3.startup</h3>
+            <pre>ip addr add 192.168.1.30/24 dev eth0</pre>
+        </section>
+
+        <section id="esercizio4">
+            <h2>📝 Esercizio 4: Rete con Router</h2>
+            <h3>Situazione</h3>
+            <p>2 PC collegati a un Router. Rete 192.168.0.0/24</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+PC2[0]=A
+Router1[0]=A</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.0.1/24 dev eth0
+ip route add default via 192.168.0.254</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.0.2/24 dev eth0
+ip route add default via 192.168.0.254</pre>
+            <h3>Router1.startup</h3>
+            <pre>ip addr add 192.168.0.254/24 dev eth0</pre>
+        </section>
+
+        <section id="esercizio5">
+            <h2>📝 Esercizio 5: Rete con 2 Router</h2>
+            <h3>Situazione</h3>
+            <p>2 Router collegati tra loro, ciascuno con un PC. Rete Router1: 192.168.1.0, Rete Router2: 192.168.2.0</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+Router1[0]=A
+Router1[1]=B
+Router2[0]=B
+Router2[1]=C
+PC2[0]=C</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.1/24 dev eth0
+ip route add default via 192.168.1.254</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.2.1/24 dev eth0
+ip route add default via 192.168.2.254</pre>
+            <h3>Router1.startup</h3>
+            <pre>sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.1.254/24 dev eth0
+ip addr add 10.0.0.1/24 dev eth1</pre>
+            <h3>Router2.startup</h3>
+            <pre>sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.2.254/24 dev eth0
+ip addr add 10.0.0.2/24 dev eth1</pre>
+        </section>
+
+        <section id="esercizio6">
+            <h2>📝 Esercizio 6: Rete con 2 Router e 1 Server</h2>
+            <h3>Situazione</h3>
+            <p>PC1 -> Router1 -> Router2 -> PC2 e Server collegato a Router2.</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+Router1[0]=A
+Router1[1]=B
+Router2[0]=B
+Router2[1]=C
+PC2[0]=C
+Server1[0]=C</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.1/24 dev eth0
+ip route add default via 192.168.1.254</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.3.1/24 dev eth0
+ip route add default via 192.168.3.254</pre>
+            <h3>Server1.startup</h3>
+            <pre>ip addr add 192.168.3.100/24 dev eth0
+ip route add default via 192.168.3.254</pre>
+            <h3>Router1.startup</h3>
+            <pre>sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.1.254/24 dev eth0
+ip addr add 10.0.0.1/24 dev eth1</pre>
+            <h3>Router2.startup</h3>
+            <pre>sysctl -w net.ipv4.ip_forward=1
+ip addr add 10.0.0.2/24 dev eth0
+ip addr add 192.168.3.254/24 dev eth1</pre>
+        </section>
+
+        <section id="esercizio7">
+            <h2>📝 Esercizio 7: Rete con Hub e 2 PC</h2>
+            <h3>Situazione</h3>
+            <p>2 PC collegati a un Hub.</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+PC2[0]=A
+Hub1[0]=A</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.1/24 dev eth0</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.1.2/24 dev eth0</pre>
+        </section>
+
+        <section id="esercizio8">
+            <h2>📝 Esercizio 8: Rete con Switch e 3 PC</h2>
+            <h3>Situazione</h3>
+            <p>3 PC collegati a uno Switch.</p>
+            <h3>lab.conf</h3>
+            <pre>PC1[0]=A
+PC2[0]=A
+PC3[0]=A
+Switch1[0]=A</pre>
+            <h3>PC1.startup</h3>
+            <pre>ip addr add 192.168.1.1/24 dev eth0</pre>
+            <h3>PC2.startup</h3>
+            <pre>ip addr add 192.168.1.2/24 dev eth0</pre>
+            <h3>PC3.startup</h3>
+            <pre>ip addr add 192.168.1.3/24 dev eth0</pre>
+        </section>
+
+        <section id="svolti1">
+            <h2>📝 Esercizi Svolti - Parte 1</h2>
+            
+            <h3>Rete Locale con Hub</h3>
+            <p><strong>Topologia:</strong> 3 PC + 1 Hub nella stessa rete 192.168.10.0/24</p>
+            <pre>lab.conf:
+PC1[0]=A
+PC2[0]=A
+PC3[0]=A
+Hub1[0]=A
+
+PC1.startup:
+ip addr add 192.168.10.1/24 dev eth0
+
+PC2.startup:
+ip addr add 192.168.10.2/24 dev eth0
+
+PC3.startup:
+ip addr add 192.168.10.3/24 dev eth0</pre>
+        </section>
+
+        <section id="svolti2">
+            <h2>📝 Rete con Switch e Router</h2>
+            <p><strong>Topologia:</strong> 3 PC + 1 Switch + 1 Router</p>
+            <pre>lab.conf:
+PC1[0]=A
+PC2[0]=A
+PC3[0]=A
+Switch1[0]=A
+Router1[0]=A
+
+PC1.startup:
+ip addr add 192.168.10.1/24 dev eth0
+ip route add default via 192.168.10.254
+
+PC2.startup:
+ip addr add 192.168.10.2/24 dev eth0
+ip route add default via 192.168.10.254
+
+PC3.startup:
+ip addr add 192.168.10.3/24 dev eth0
+ip route add default via 192.168.10.254
+
+Router1.startup:
+ip addr add 192.168.10.254/24 dev eth0</pre>
+        </section>
+
+        <section id="svolti3">
+            <h2>📝 Rete con 2 Router</h2>
+            <p><strong>Topologia:</strong> 2 PC + 2 Router</p>
+            <pre>lab.conf:
+PC1[0]=A
+Router1[0]=A
+Router1[1]=B
+Router2[0]=B
+PC2[0]=B
+
+PC1.startup:
+ip addr add 192.168.10.1/24 dev eth0
+ip route add default via 192.168.10.254
+
+PC2.startup:
+ip addr add 192.168.20.1/24 dev eth0
+ip route add default via 192.168.20.254
+
+Router1.startup:
+sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.10.254/24 dev eth0
+ip addr add 10.0.0.1/24 dev eth1
+
+Router2.startup:
+sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.20.254/24 dev eth0
+ip addr add 10.0.0.2/24 dev eth1</pre>
+        </section>
+
+        <section id="svolti4">
+            <h2>📝 Rete con 2 Router e Server</h2>
+            <p><strong>Topologia:</strong> PC1, Router1, Router2, PC2, Server</p>
+            <pre>lab.conf:
+PC1[0]=A
+Router1[0]=A
+Router1[1]=B
+Router2[0]=B
+Router2[1]=C
+PC2[0]=C
+Server1[0]=C
+
+PC1.startup:
+ip addr add 192.168.10.1/24 dev eth0
+ip route add default via 192.168.10.254
+
+PC2.startup:
+ip addr add 192.168.30.1/24 dev eth0
+ip route add default via 192.168.30.254
+
+Server1.startup:
+ip addr add 192.168.30.10/24 dev eth0
+ip route add default via 192.168.30.254
+
+Router1.startup:
+sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.10.254/24 dev eth0
+ip addr add 10.0.0.1/24 dev eth1
+
+Router2.startup:
+sysctl -w net.ipv4.ip_forward=1
+ip addr add 10.0.0.2/24 dev eth0
+ip addr add 192.168.30.254/24 dev eth1</pre>
+        </section>
+
+        <section id="svolti5">
+            <h2>📝 Rete con Switch e 2 Router</h2>
+            <p><strong>Topologia:</strong> 2 PC, 1 Switch, 2 Router</p>
+            <pre>lab.conf:
+PC1[0]=A
+PC2[0]=A
+Switch1[0]=A
+Switch1[1]=B
+Router1[0]=A
+Router1[1]=B
+
+PC1.startup:
+ip addr add 192.168.10.1/24 dev eth0
+ip route add default via 192.168.10.254
+
+PC2.startup:
+ip addr add 192.168.20.1/24 dev eth0
+ip route add default via 192.168.20.254
+
+Router1.startup:
+sysctl -w net.ipv4.ip_forward=1
+ip addr add 192.168.10.254/24 dev eth0
+ip addr add 192.168.20.254/24 dev eth1</pre>
+        </section>
+
+        <section id="comandi">
+            <h2>⌨️ Comandi Utili</h2>
+            <h3>Gestione Lab</h3>
+            <pre># Avvia lab
+kathara lstart -d nome_lab
+
+# Ferma lab
+kathara lstop -d nome_lab
+
+# Rimuovi lab
+kathara lclean -d nome_lab
+
+# Lista container
+kathara list
+
+# Collegati a dispositivo
+kathara connect -d nome_lab -n nome_dispositivo
+
+# Esegui comando
+kathara exec -d nome_lab -n nome_dispositivo "comando"</pre>
+            <h3>Debug</h3>
+            <pre># Test connettività
+ping &lt;indirizzo_ip&gt;
+
+# Visualizza routing
+ip route show
+ip addr show
+
+# Trace route
+traceroute &lt;destinazione&gt;
+
+# Cattura traffico
+tcpdump -i eth0
+
+# Visualizza tabella ARP
+arp -a
+
+# Test DNS
+nslookup &lt;dominio&gt;</pre>
+        </section>
+
+        <section id="tips">
+            <h2>💡 Regole importanti</h2>
+            <ul>
+                <li><strong>Cavo Straight-Through:</strong> PC-Router, PC-Switch, PC-Hub</li>
+                <li><strong>Cavo Cross-Over:</strong> PC-PC diretto, Router-Router</li>
+                <li><strong>Router:</strong> Deve sempre avere <code>sysctl -w net.ipv4.ip_forward=1</code></li>
+                <li><strong>Default gateway:</strong> I PC devono avere il route verso il router</li>
+                <li><strong>Stessa rete:</strong> Dispositivi sulla stessa lettera (A, B, C) comunicano</li>
+                <li><strong>Rete diversa:</strong> Serve un Router per comunicare tra reti diverse</li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>
