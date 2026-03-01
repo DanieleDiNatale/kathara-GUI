@@ -1,5 +1,3 @@
-console.log('Script starting...');
-
 const canvas = document.getElementById('topologyCanvas');
 const ctx = canvas.getContext('2d');
 

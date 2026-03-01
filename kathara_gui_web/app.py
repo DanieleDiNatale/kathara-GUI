@@ -120,10 +120,8 @@ def stop_lab():
 
 @app.route('/api/ping', methods=['POST'])
 def ping_device():
-    print(f"[PING] Request received")  # Debug
     try:
         data = request.get_json()
-        print(f"[PING] Data: {data}")  # Debug
         if not data:
             return jsonify({'success': False, 'message': 'No data provided'}), 400
         
@@ -131,8 +129,6 @@ def ping_device():
         target_ip = data.get('target_ip')
         eth = data.get('eth', 'eth0')
         lab_path = data.get('lab_path')
-        
-        print(f"[PING] device={device_name}, target={target_ip}, eth={eth}, lab={lab_path}")  # Debug
         
         if not device_name or not target_ip:
             return jsonify({'success': False, 'message': 'Device name and target IP required'}), 400
@@ -150,12 +146,10 @@ def ping_device():
             return result.stdout + result.stderr
         
         output = run_ping()
-        print(f"[PING] Output: {output[:200]}")  # Debug
         return jsonify({'success': True, 'result': output})
     except subprocess.TimeoutExpired:
         return jsonify({'success': False, 'message': 'Ping timeout'})
     except Exception as e:
-        print(f"[PING] Error: {e}")  # Debug
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/lab/list', methods=['POST'])
