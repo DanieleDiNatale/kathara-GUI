@@ -522,17 +522,11 @@ class MainWindow(QMainWindow):
                 self.eth_label.setText(device.eth)
                 self.ip_label.setText(device.ip_address if device.ip_address else "-")
                 self.gateway_label.setText(device.gateway if device.gateway else "-")
-                self.eth_label.setVisible(True)
-                self.ip_label.setVisible(True)
-                self.gateway_label.setVisible(True)
                 self.config_ip_btn.setEnabled(True)
             else:
                 self.eth_label.setText("-")
                 self.ip_label.setText("-")
                 self.gateway_label.setText("-")
-                self.eth_label.setVisible(False)
-                self.ip_label.setVisible(False)
-                self.gateway_label.setVisible(False)
                 self.config_ip_btn.setEnabled(False)
         else:
             self.name_label.setText("-")
@@ -540,9 +534,6 @@ class MainWindow(QMainWindow):
             self.eth_label.setText("-")
             self.ip_label.setText("-")
             self.gateway_label.setText("-")
-            self.eth_label.setVisible(True)
-            self.ip_label.setVisible(True)
-            self.gateway_label.setVisible(True)
             self.config_ip_btn.setEnabled(False)
     
     def on_cable_changed(self):
