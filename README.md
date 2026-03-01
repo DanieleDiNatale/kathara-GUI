@@ -1,6 +1,6 @@
-# Kathara GUI
+# Kathara GUI (ALPHA)
 
-GUI per Kathara Network Emulator in stile Cisco Packet Tracer.
+GUI per Kathara Network Emulator in stile Cisco Packet Tracer. 
 
 ## ✨ Caratteristiche
 
