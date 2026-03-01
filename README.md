@@ -27,6 +27,9 @@ GUI per Kathara Network Emulator in stile Cisco Packet Tracer.
 ### GUI DESKTOP
 
 
+working in progress......
+
+
 ## 🚀 Installazione
 
 ### Prerequisiti
