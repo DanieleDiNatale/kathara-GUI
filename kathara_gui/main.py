@@ -20,11 +20,11 @@ except Exception as e:
     sys.exit(1)
 
 DEVICE_TYPES = {
-    'router': {'color': '#2D2D2D', 'label': 'ROUTER'},
-    'switch': {'color': '#1A1A1A', 'label': 'SWITCH'},
-    'pc': {'color': '#333333', 'label': 'PC'},
-    'hub': {'color': '#0D0D0D', 'label': 'HUB'},
-    'cloud': {'color': '#404040', 'label': 'CLOUD'},
+    'router': {'color': '#4A90D9', 'label': 'ROUTER'},
+    'switch': {'color': '#F5A623', 'label': 'SWITCH'},
+    'pc': {'color': '#7ED321', 'label': 'PC'},
+    'hub': {'color': '#D0021B', 'label': 'HUB'},
+    'cloud': {'color': '#9013FE', 'label': 'CLOUD'},
 }
 
 CABLE_TYPES = {
@@ -455,7 +455,7 @@ class MainWindow(QMainWindow):
         
         start_btn = QPushButton("START")
         start_btn.setMinimumSize(60, 45)
-        start_btn.setStyleSheet("background-color: #333; color: white; border: 2px solid #555; border-radius: 5px; font-weight: bold;")
+        start_btn.setStyleSheet("background-color: #7ED321; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
         start_btn.clicked.connect(self.start_lab)
         toolbar.addWidget(start_btn)
         

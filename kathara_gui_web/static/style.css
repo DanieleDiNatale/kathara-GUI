@@ -31,7 +31,7 @@ body {
 
 .toolbar-section h1 {
     font-size: 20px;
-    color: #888;
+    color: #4A90D9;
     font-weight: bold;
 }
 
@@ -63,20 +63,20 @@ body {
     border-color: white;
 }
 
-.device-btn.router { background: #2D2D2D; }
-.device-btn.switch { background: #1A1A1A; }
-.device-btn.pc { background: #333333; }
-.device-btn.hub { background: #0D0D0D; }
-.device-btn.cloud { background: #404040; }
+.device-btn.router { background: #4A90D9; }
+.device-btn.switch { background: #F5A623; }
+.device-btn.pc { background: #7ED321; }
+.device-btn.hub { background: #D0021B; }
+.device-btn.cloud { background: #9013FE; }
 
 .action-btn:hover { transform: scale(1.05); }
-.action-btn.connect { background: #333; }
-.action-btn.connect.active { background: #555; color: white; }
-.action-btn.delete { background: #222; }
-.action-btn.start { background: #333; }
-.action-btn.stop { background: #444; }
-.action-btn.new { background: #333; }
-.action-btn.guide { background: #444; text-decoration: none; display: inline-block; }
+.action-btn.connect { background: #FF6B6B; }
+.action-btn.connect.active { background: #FFD700; color: black; }
+.action-btn.delete { background: #D0021B; }
+.action-btn.start { background: #7ED321; }
+.action-btn.stop { background: #F5A623; }
+.action-btn.new { background: #666; }
+.action-btn.guide { background: #9013FE; text-decoration: none; display: inline-block; }
 
 .main-content {
     display: flex;
@@ -110,8 +110,8 @@ body {
     font-size: 13px;
     font-weight: bold;
     margin-bottom: 12px;
-    color: #888;
-    border-bottom: 2px solid #444;
+    color: #4A90D9;
+    border-bottom: 2px solid #4A90D9;
     padding-bottom: 8px;
 }
 
@@ -181,7 +181,7 @@ select {
 }
 
 .btn:hover { opacity: 0.9; transform: scale(1.02); }
-.btn.primary { background: #333; color: white; }
+.btn.primary { background: #4A90D9; color: white; }
 .btn.secondary { background: #444; color: white; }
 
 textarea {
