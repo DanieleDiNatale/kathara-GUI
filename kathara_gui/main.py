@@ -20,11 +20,11 @@ except Exception as e:
     sys.exit(1)
 
 DEVICE_TYPES = {
-    'router': {'color': '#4A90D9', 'label': 'ROUTER'},
-    'switch': {'color': '#F5A623', 'label': 'SWITCH'},
-    'pc': {'color': '#7ED321', 'label': 'PC'},
-    'hub': {'color': '#D0021B', 'label': 'HUB'},
-    'cloud': {'color': '#9013FE', 'label': 'CLOUD'},
+    'router': {'color': '#2D2D2D', 'label': 'ROUTER'},
+    'switch': {'color': '#1A1A1A', 'label': 'SWITCH'},
+    'pc': {'color': '#333333', 'label': 'PC'},
+    'hub': {'color': '#0D0D0D', 'label': 'HUB'},
+    'cloud': {'color': '#404040', 'label': 'CLOUD'},
 }
 
 CABLE_TYPES = {
@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
         
     def setup_device_panel(self, parent):
         group = QGroupBox("DEVICE PROPERTIES")
-        group.setStyleSheet("QGroupBox { font-weight: bold; border: 2px solid #4A90D9; padding: 10px; }")
+        group.setStyleSheet("QGroupBox { font-weight: bold; border: 2px solid #444; padding: 10px; }")
         layout = QFormLayout()
         
         self.name_label = QLabel("-")
@@ -336,7 +336,7 @@ class MainWindow(QMainWindow):
         layout.addRow("Gateway:", self.gateway_label)
         
         self.config_ip_btn = QPushButton("Configure IP")
-        self.config_ip_btn.setStyleSheet("background-color: #4A90D9; color: white; padding: 8px; border: none;")
+        self.config_ip_btn.setStyleSheet("background-color: #333; color: white; padding: 8px; border: none;")
         self.config_ip_btn.clicked.connect(self.configure_device_ip)
         self.config_ip_btn.setEnabled(False)
         layout.addRow("", self.config_ip_btn)
@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
         
     def setup_connections_panel(self, parent):
         group = QGroupBox("CONNECTIONS")
-        group.setStyleSheet("QGroupBox { font-weight: bold; border: 2px solid #7ED321; padding: 10px; }")
+        group.setStyleSheet("QGroupBox { font-weight: bold; border: 2px solid #555; padding: 10px; }")
         layout = QVBoxLayout()
         
         self.connections_list = QListWidget()
@@ -368,7 +368,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.connections_list)
         
         refresh_btn = QPushButton("Refresh")
-        refresh_btn.setStyleSheet("background-color: #7ED321; color: white; padding: 5px; border: none;")
+        refresh_btn.setStyleSheet("background-color: #444; color: white; padding: 5px; border: none;")
         refresh_btn.clicked.connect(self.refresh_connections)
         layout.addWidget(refresh_btn)
         
@@ -455,7 +455,7 @@ class MainWindow(QMainWindow):
         
         start_btn = QPushButton("START")
         start_btn.setMinimumSize(60, 45)
-        start_btn.setStyleSheet("background-color: #7ED321; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
+        start_btn.setStyleSheet("background-color: #333; color: white; border: 2px solid #555; border-radius: 5px; font-weight: bold;")
         start_btn.clicked.connect(self.start_lab)
         toolbar.addWidget(start_btn)
         

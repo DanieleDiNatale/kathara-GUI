@@ -2,11 +2,11 @@ const canvas = document.getElementById('topologyCanvas');
 const ctx = canvas.getContext('2d');
 
 const DEVICE_TYPES = {
-    router: { color: '#4A90D9', label: 'ROUTER' },
-    switch: { color: '#F5A623', label: 'SWITCH' },
-    pc: { color: '#7ED321', label: 'PC' },
-    hub: { color: '#D0021B', label: 'HUB' },
-    cloud: { color: '#9013FE', label: 'CLOUD' }
+    router: { color: '#2D2D2D', label: 'ROUTER' },
+    switch: { color: '#1A1A1A', label: 'SWITCH' },
+    pc: { color: '#333333', label: 'PC' },
+    hub: { color: '#0D0D0D', label: 'HUB' },
+    cloud: { color: '#404040', label: 'CLOUD' }
 };
 
 const DEVICE_PORTS = {
@@ -525,7 +525,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     
     if (result.success) {
         currentLabPath = result.lab_path;
-        log(`[EXPORT] Lab exported to: ${result.lab_path}`, '#4A90D9');
+        log(`[EXPORT] Lab exported to: ${result.lab_path}`, '#666');
         log(`[INFO] ${devices.length} devices, ${connections.length} connections`, '#888');
     }
 });
