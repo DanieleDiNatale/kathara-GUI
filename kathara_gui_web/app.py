@@ -33,6 +33,9 @@ def add_device():
 @app.route('/api/lab/export', methods=['POST'])
 def export_lab():
     data = request.json
+    if not data:
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
+    
     lab_name = data.get('lab_name', 'my_lab')
     devices = data.get('devices', [])
     connections = data.get('connections', [])
@@ -93,6 +96,9 @@ def export_lab():
 @app.route('/api/lab/start', methods=['POST'])
 def start_lab():
     data = request.json
+    if not data:
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
+    
     lab_path = data.get('lab_path')
     
     if not lab_path or not os.path.exists(lab_path):
@@ -107,6 +113,9 @@ def start_lab():
 @app.route('/api/lab/stop', methods=['POST'])
 def stop_lab():
     data = request.json
+    if not data:
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
+    
     lab_path = data.get('lab_path')
     
     if not lab_path:
