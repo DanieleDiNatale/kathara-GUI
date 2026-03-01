@@ -13,7 +13,8 @@ GUI per Kathara Network Emulator in stile Cisco Packet Tracer. Crea topologie di
 
 - **Dispositivi di rete**: Router, Switch, PC, Hub, Cloud
 - **Connessioni visive**: Cavi colorati con diversi tipi (Copper Straight, Copper Cross, Fiber, Serial, Phone, Coaxial)
-- **Configurazione IP**: Interface grafica per impostare indirizzi IP e gateway
+- **Configurazione IP**: Interface grafica per impostare indirizzi IP, gateway e interfaccia di rete (eth0-eth3)
+- **Ping**: Esegui ping direttamente dalla GUI per testare la connettività
 - **Esportazione**: Genera automaticamente file `lab.conf` e `*.startup` per Kathara
 - **Gestione Lab**: Avvia, ferma e connettiti ai container
 - **Console**: Messaggi di log in tempo reale
@@ -93,7 +94,15 @@ Poi apri **http://127.0.0.1:5000** nel browser
 4. **Configura IP**: 
    - Seleziona un dispositivo
    - Clicca "SET IP" (o doppio click sul dispositivo)
+   - Seleziona l'interfaccia di rete (eth0-eth1-eth2-eth3)
    - Inserisci IP e Gateway
+
+### Testare la Connettività (Ping)
+
+1. Seleziona un dispositivo con IP configurato
+2. Clicca "PING" 
+3. Inserisci l'IP da pingare (es. gateway o altro host)
+4. Visualizza il risultato nella console
 
 ### Esportare il Lab
 

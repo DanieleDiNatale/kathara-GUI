@@ -118,6 +118,33 @@ def stop_lab():
     threading.Thread(target=run, daemon=True).start()
     return jsonify({'success': True, 'message': 'Lab stopping...'})
 
+@app.route('/ping', methods=['POST'])
+def ping_device():
+    data = request.json
+    device_name = data.get('device_name')
+    target_ip = data.get('target_ip')
+    eth = data.get('eth', 'eth0')
+    
+    if not device_name or not target_ip:
+        return jsonify({'success': False, 'message': 'Device name and target IP required'}), 400
+    
+    def run_ping():
+        result = subprocess.run(
+            ['kathara', 'connect', '-d', '.', '-c', device_name, '--', 'ping', '-c', '4', '-I', eth, target_ip],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        return result.stdout + result.stderr
+    
+    try:
+        output = run_ping()
+        return jsonify({'success': True, 'result': output})
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'message': 'Ping timeout'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/api/lab/list', methods=['POST'])
 def list_devices():
     data = request.json

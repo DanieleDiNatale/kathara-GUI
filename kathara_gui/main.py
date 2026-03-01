@@ -40,6 +40,7 @@ class DeviceItem(QGraphicsRectItem):
     def __init__(self, device_type, name, x, y):
         self.device_type = device_type
         self.name = name
+        self.eth = "eth0"
         self.ip_address = ""
         self.gateway = ""
         
@@ -77,11 +78,12 @@ class DeviceItem(QGraphicsRectItem):
         
         self.connections = []
     
-    def set_ip(self, ip, gateway=""):
+    def set_ip(self, eth, ip, gateway=""):
+        self.eth = eth
         self.ip_address = ip
         self.gateway = gateway
         if ip:
-            self.ip_label.setPlainText(f"IP:{ip}")
+            self.ip_label.setPlainText(f"{eth}:{ip}")
         else:
             self.ip_label.setPlainText("")
 
@@ -236,17 +238,23 @@ class TopologyScene(QGraphicsScene):
                     f.write("sysctl -w net.ipv4.ip_forward=1\n")
 
 class IPConfigDialog(QDialog):
-    def __init__(self, device_name, current_ip="", current_gateway="", parent=None):
+    def __init__(self, device_name, current_ip="", current_gateway="", current_eth="eth0", parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"Configure IP - {device_name}")
+        self.setWindowTitle(f"Configure - {device_name}")
         self.setModal(True)
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(400)
         
         layout = QVBoxLayout(self)
         
-        layout.addWidget(QLabel(f"<h3>Configure: {device_name}</h3>"))
+        info_label = QLabel(f"<h3>Configure: {device_name}</h3>")
+        layout.addWidget(info_label)
         
         form = QFormLayout()
+        
+        self.eth_combo = QComboBox()
+        self.eth_combo.addItems(["eth0", "eth1", "eth2", "eth3"])
+        self.eth_combo.setCurrentText(current_eth)
+        form.addRow("Interface:", self.eth_combo)
         
         self.ip_edit = QLineEdit(current_ip)
         self.ip_edit.setPlaceholderText("192.168.1.10")
@@ -258,13 +266,17 @@ class IPConfigDialog(QDialog):
         
         layout.addLayout(form)
         
+        hint = QLabel("<i>Note: Each interface must be on a different network</i>")
+        hint.setStyleSheet("color: #888;")
+        layout.addWidget(hint)
+        
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
     
     def get_values(self):
-        return self.ip_edit.text().strip(), self.gateway_edit.text().strip()
+        return self.eth_combo.currentText(), self.ip_edit.text().strip(), self.gateway_edit.text().strip()
 
 class ConsoleWidget(QTextEdit):
     def __init__(self):
@@ -327,11 +339,13 @@ class MainWindow(QMainWindow):
         
         self.name_label = QLabel("-")
         self.type_label = QLabel("-")
+        self.eth_label = QLabel("-")
         self.ip_label = QLabel("-")
         self.gateway_label = QLabel("-")
         
         layout.addRow("Name:", self.name_label)
         layout.addRow("Type:", self.type_label)
+        layout.addRow("Interface:", self.eth_label)
         layout.addRow("IP:", self.ip_label)
         layout.addRow("Gateway:", self.gateway_label)
         
@@ -476,10 +490,10 @@ class MainWindow(QMainWindow):
         items = self.canvas.scene().selectedItems()
         if items and isinstance(items[0], DeviceItem):
             device = items[0]
-            dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, self)
+            dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, device.eth, self)
             if dialog.exec():
-                ip, gateway = dialog.get_values()
-                device.set_ip(ip, gateway)
+                eth, ip, gateway = dialog.get_values()
+                device.set_ip(eth, ip, gateway)
                 self.on_selection_changed()
                 if ip:
                     self.console.log(f"[IP] {device.name}: {ip}")
@@ -498,12 +512,14 @@ class MainWindow(QMainWindow):
             device = items[0]
             self.name_label.setText(device.name)
             self.type_label.setText(DEVICE_TYPES[device.device_type]['label'])
+            self.eth_label.setText(device.eth)
             self.ip_label.setText(device.ip_address if device.ip_address else "-")
             self.gateway_label.setText(device.gateway if device.gateway else "-")
             self.config_ip_btn.setEnabled(True)
         else:
             self.name_label.setText("-")
             self.type_label.setText("-")
+            self.eth_label.setText("-")
             self.ip_label.setText("-")
             self.gateway_label.setText("-")
             self.config_ip_btn.setEnabled(False)

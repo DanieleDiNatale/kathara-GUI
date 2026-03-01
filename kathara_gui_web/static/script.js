@@ -320,6 +320,7 @@ document.querySelectorAll('.device-btn').forEach(btn => {
             type,
             x: 100 + (devices.length % 4) * 150,
             y: 100 + Math.floor(devices.length / 4) * 120,
+            eth: 'eth0',
             ip: '',
             gateway: '',
             config: ''
@@ -400,41 +401,49 @@ function updatePropertiesPanel() {
     const nameEl = document.querySelector('#selectedName .property-value');
     const typeEl = document.querySelector('#selectedType .property-value');
     const portsEl = document.querySelector('#selectedPorts .property-value');
+    const ethEl = document.querySelector('#selectedEth .property-value');
     const ipEl = document.querySelector('#selectedIP .property-value');
     const gatewayEl = document.querySelector('#selectedGateway .property-value');
     const configEl = document.getElementById('deviceConfig');
     const configBtn = document.getElementById('saveConfigBtn');
     const setIpBtn = document.getElementById('setIpBtn');
+    const pingBtn = document.getElementById('pingBtn');
     
     if (selectedDevice) {
         nameEl.textContent = selectedDevice.name;
         typeEl.textContent = DEVICE_TYPES[selectedDevice.type].label;
         portsEl.textContent = Array.from({length: DEVICE_PORTS[selectedDevice.type]}, (_, i) => `eth${i}`).join(', ');
+        ethEl.textContent = selectedDevice.eth || '-';
         ipEl.textContent = selectedDevice.ip || '-';
         gatewayEl.textContent = selectedDevice.gateway || '-';
         configEl.value = selectedDevice.config || '';
         configBtn.style.display = 'inline-block';
         setIpBtn.style.display = 'inline-block';
+        pingBtn.style.display = selectedDevice.ip ? 'inline-block' : 'none';
     } else if (selectedConnection) {
         const dev1 = devices.find(d => d.name === selectedConnection.from);
         const dev2 = devices.find(d => d.name === selectedConnection.to);
         nameEl.textContent = `${selectedConnection.from} <-> ${selectedConnection.to}`;
         typeEl.textContent = CABLE_TYPES[selectedConnection.cableType].label;
         portsEl.textContent = '-';
+        ethEl.textContent = '-';
         ipEl.textContent = '-';
         gatewayEl.textContent = '-';
         configEl.value = '';
         configBtn.style.display = 'none';
         setIpBtn.style.display = 'none';
+        pingBtn.style.display = 'none';
     } else {
         nameEl.textContent = '-';
         typeEl.textContent = '-';
         portsEl.textContent = '-';
+        ethEl.textContent = '-';
         ipEl.textContent = '-';
         gatewayEl.textContent = '-';
         configEl.value = '';
         configBtn.style.display = 'none';
         setIpBtn.style.display = 'none';
+        pingBtn.style.display = 'none';
     }
 }
 
@@ -472,22 +481,56 @@ function updateConnectionsList() {
 }
 
 function openIPDialog(device) {
-    const ip = prompt(`Configure IP for ${device.name}:\nEnter IP address (e.g., 192.168.1.10)`, device.ip || '');
-    if (ip !== null) {
-        device.ip = ip;
-        const gw = prompt(`Enter Gateway for ${device.name} (optional):`, device.gateway || '');
-        if (gw !== null) {
-            device.gateway = gw;
+    const ethOptions = ['eth0', 'eth1', 'eth2', 'eth3'];
+    let selectedEth = device.eth || 'eth0';
+    
+    const eth = prompt(`Configure ${device.name}:\nSelect interface (${ethOptions.join(', ')}):`, selectedEth);
+    if (eth !== null && ethOptions.includes(eth)) {
+        device.eth = eth;
+        const ip = prompt(`Enter IP address for ${device.name} (e.g., 192.168.1.10):`, device.ip || '');
+        if (ip !== null) {
+            device.ip = ip;
+            const gw = prompt(`Enter Gateway for ${device.name} (optional):`, device.gateway || '');
+            if (gw !== null) {
+                device.gateway = gw;
+            }
+            updatePropertiesPanel();
+            log(`[IP] ${device.name} ${eth}:${ip}` + (gw ? ` gateway: ${gw}` : ''), '#FFFF00');
+            draw();
         }
-        updatePropertiesPanel();
-        log(`[IP] ${device.name}: ${ip}` + (gw ? ` gateway: ${gw}` : ''), '#FFFF00');
-        draw();
+    } else if (eth !== null) {
+        alert('Invalid interface. Please choose: ' + ethOptions.join(', '));
     }
 }
 
 document.getElementById('setIpBtn').addEventListener('click', () => {
     if (selectedDevice) {
         openIPDialog(selectedDevice);
+    }
+});
+
+document.getElementById('pingBtn').addEventListener('click', () => {
+    if (selectedDevice && selectedDevice.ip) {
+        const targetIP = prompt(`Enter IP address to ping from ${selectedDevice.name}:`, selectedDevice.gateway || '');
+        if (targetIP) {
+            log(`[PING] ${selectedDevice.name} ping ${targetIP}...`, '#00FFFF');
+            fetch('/ping', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_name: selectedDevice.name, target_ip: targetIP, eth: selectedDevice.eth || 'eth0' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    log(`[PING] ${data.result}`, data.success ? '#7ED321' : '#FF6B6B');
+                } else {
+                    log(`[PING] Error: ${data.message}`, '#FF6B6B');
+                }
+            })
+            .catch(err => {
+                log(`[PING] Error: ${err}`, '#FF6B6B');
+            });
+        }
     }
 });
 
@@ -519,7 +562,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     
     const result = await apiCall('/api/lab/export', {
         lab_name: labName,
-        devices: devices.map(d => ({ name: d.name, type: d.type, ip: d.ip, gateway: d.gateway, config: d.config })),
+        devices: devices.map(d => ({ name: d.name, type: d.type, eth: d.eth, ip: d.ip, gateway: d.gateway, config: d.config })),
         connections: connections
     });
     
@@ -535,7 +578,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
         const labName = document.getElementById('labName').value || 'my_lab';
         const result = await apiCall('/api/lab/export', {
             lab_name: labName,
-            devices: devices.map(d => ({ name: d.name, type: d.type, ip: d.ip, gateway: d.gateway, config: d.config })),
+            devices: devices.map(d => ({ name: d.name, type: d.type, eth: d.eth, ip: d.ip, gateway: d.gateway, config: d.config })),
             connections: connections
         });
         if (result.success) {

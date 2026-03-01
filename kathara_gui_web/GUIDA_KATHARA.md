@@ -2,7 +2,7 @@
 
 ## Introduzione a Kathara
 
-Kathara è un emulatore di rete basato su Docker che permette di creare scenari di rete realistici. È ampiamente utilizzato per esercitazioni CCNA e per simulare reti aziendali.
+Kathara è un emulatore di rete basato su Docker che permette di creare scenari di rete realistici. Utilizzato solo per questo corso "SPECIALE"
 
 ---
 
