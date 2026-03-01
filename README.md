@@ -1,10 +1,4 @@
-# Kathara Network Designer
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Kathara-Network%20Designer-blue?style=for-the-badge" alt="Kathara Network Designer">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/badge/Python-3.8+-orange?style=for-the-badge" alt="Python">
-</p>
+# Kathara GUI
 
 GUI per Kathara Network Emulator in stile Cisco Packet Tracer. Crea topologie di rete visivamente ed esportale direttamente per Kathara.
 
@@ -213,35 +207,12 @@ ip route show
 traceroute <destinazione>
 ```
 
-## 🎓 Risorse per lo Studio
 
-Il progetto include guide complete per esercitazioni CCNA:
-
-- **GUIDA_PASSO_PASSO.md**: Guida dettagliata con tutti gli esercizi
-- **kathara_gui/GUIDA_GUI.md**: Come usare la GUI
-- **kathara_gui_web/GUIDA_KATHARA.md**: Esercizi Kathara
-
-## 🤝 Contribuire
-
-1. Fai un fork del progetto
-2. Crea un branch (`git checkout -b feature/nuova-funzionalità`)
-3. Committa le modifiche (`git commit -am 'Aggiunta nuova funzionalità'`)
-4. Pusha il branch (`git push origin feature/nuova-funzionalità`)
-5. Apri una Pull Request
-
-## 📝 Licenza
-
-MIT License - vedi file LICENSE per dettagli.
-
-## 🙏 Riconoscimenti
+## Base del Progetto :) 
 
 - [Kathara](https://www.kathara.org/) - Network Emulator
 - [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - GUI Framework
 - [Flask](https://flask.palletsprojects.com/) - Web Framework
 - Cisco Packet Tracer per l'ispirazione dell'interfaccia
 
----
 
-<p align="center">
-  Creato con ❤️ per la community di Reti di Calcolatori
-</p>
