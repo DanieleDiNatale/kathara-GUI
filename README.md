@@ -1,4 +1,4 @@
-# Kathara Network Designer
+# Kathara GUI
 
 <p align="center">
   <img src="https://img.shields.io/badge/Kathara-Network%20Designer-blue?style=for-the-badge" alt="Kathara Network Designer">
