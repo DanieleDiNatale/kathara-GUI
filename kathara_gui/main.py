@@ -283,7 +283,6 @@ class ConsoleWidget(QTextEdit):
         super().__init__()
         self.setReadOnly(True)
         self.setStyleSheet("background-color: #0d0d0d; color: #00ff00; font-family: monospace; font-size: 11px; border: 2px solid #333;")
-        self.log(">>> Kathara Console Ready")
     
     def log(self, message, color="#00ff00"):
         self.append(f"<span style='color:{color}'>{message}</span>")
@@ -480,11 +479,15 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(stop_btn)
     
     def add_device(self, device_type):
-        x = 200 + (len(self.scene.devices) % 4) * 180
-        y = 150 + (len(self.scene.devices) // 4) * 150
-        device = self.scene.add_device(device_type, x, y)
-        self.console.log(f"[+] Added: {device.name}")
-        self.refresh_connections()
+        try:
+            x = 200 + (len(self.scene.devices) % 4) * 180
+            y = 150 + (len(self.scene.devices) // 4) * 150
+            device = self.scene.add_device(device_type, x, y)
+            if device:
+                self.console.log(f"[+] Added: {device.name}")
+                self.refresh_connections()
+        except Exception as e:
+            print(f"Error adding device: {e}")
     
     def configure_device_ip(self):
         items = self.canvas.scene().selectedItems()
