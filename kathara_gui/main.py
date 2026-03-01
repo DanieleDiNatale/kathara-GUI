@@ -440,7 +440,8 @@ class MainWindow(QMainWindow):
             btn = QPushButton(info['label'])
             btn.setMinimumSize(70, 45)
             btn.setStyleSheet(f"background-color: {info['color']}; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
-            btn.clicked.connect(lambda dt=device_type: self.add_device(dt))
+            dt = device_type
+            btn.clicked.connect(lambda checked, dt=dt: self.add_device(dt))
             toolbar.addWidget(btn)
         
         toolbar.addSeparator()
