@@ -21,7 +21,8 @@ GUI per Kathara Network Emulator in stile Cisco Packet Tracer.
 
 ### GUI WEB
 
-<img width="1917" height="911" alt="WEB GUI " src="https://github.com/user-attachments/assets/11d860af-99af-4c8f-a33f-2bde8aa5bb0c" />
+<img width="1911" height="907" alt="WEB GUI " src="https://github.com/user-attachments/assets/9f3bb8c0-bb2a-41be-a191-ffa3a60453d4" />
+
 
 ### GUI DESKTOP
 
