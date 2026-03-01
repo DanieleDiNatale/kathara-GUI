@@ -1,6 +1,6 @@
 # Kathara GUI
 
-GUI per Kathara Network Emulator in stile Cisco Packet Tracer. Crea topologie di rete visivamente ed esportale direttamente per Kathara.
+GUI per Kathara Network Emulator in stile Cisco Packet Tracer.
 
 ## ✨ Caratteristiche
 
@@ -18,8 +18,6 @@ GUI per Kathara Network Emulator in stile Cisco Packet Tracer. Crea topologie di
 - **Esportazione**: Genera automaticamente file `lab.conf` e `*.startup` per Kathara
 - **Gestione Lab**: Avvia, ferma e connettiti ai container
 - **Console**: Messaggi di log in tempo reale
-
-## 📋Screenshot
 
 ### GUI Desktop
 ```
