@@ -1,11 +1,5 @@
 # Kathara GUI
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Kathara-Network%20Designer-blue?style=for-the-badge" alt="Kathara Network Designer">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/badge/Python-3.8+-orange?style=for-the-badge" alt="Python">
-</p>
-
 GUI per Kathara Network Emulator in stile Cisco Packet Tracer. Crea topologie di rete visivamente ed esportale direttamente per Kathara.
 
 ## ✨ Caratteristiche
