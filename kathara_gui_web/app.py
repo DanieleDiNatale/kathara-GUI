@@ -118,31 +118,44 @@ def stop_lab():
     threading.Thread(target=run, daemon=True).start()
     return jsonify({'success': True, 'message': 'Lab stopping...'})
 
-@app.route('/ping', methods=['POST'])
+@app.route('/api/ping', methods=['POST'])
 def ping_device():
-    data = request.json
-    device_name = data.get('device_name')
-    target_ip = data.get('target_ip')
-    eth = data.get('eth', 'eth0')
-    
-    if not device_name or not target_ip:
-        return jsonify({'success': False, 'message': 'Device name and target IP required'}), 400
-    
-    def run_ping():
-        result = subprocess.run(
-            ['kathara', 'connect', '-d', '.', '-c', device_name, '--', 'ping', '-c', '4', '-I', eth, target_ip],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        return result.stdout + result.stderr
-    
+    print(f"[PING] Request received")  # Debug
     try:
+        data = request.get_json()
+        print(f"[PING] Data: {data}")  # Debug
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        device_name = data.get('device_name')
+        target_ip = data.get('target_ip')
+        eth = data.get('eth', 'eth0')
+        lab_path = data.get('lab_path')
+        
+        print(f"[PING] device={device_name}, target={target_ip}, eth={eth}, lab={lab_path}")  # Debug
+        
+        if not device_name or not target_ip:
+            return jsonify({'success': False, 'message': 'Device name and target IP required'}), 400
+        
+        if not lab_path or not os.path.exists(lab_path):
+            return jsonify({'success': False, 'message': f'Lab not found: {lab_path}'}), 400
+        
+        def run_ping():
+            result = subprocess.run(
+                ['kathara', 'connect', '-d', lab_path, '-c', device_name, '--', 'ping', '-c', '4', '-I', eth, target_ip],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            return result.stdout + result.stderr
+        
         output = run_ping()
+        print(f"[PING] Output: {output[:200]}")  # Debug
         return jsonify({'success': True, 'result': output})
     except subprocess.TimeoutExpired:
         return jsonify({'success': False, 'message': 'Ping timeout'})
     except Exception as e:
+        print(f"[PING] Error: {e}")  # Debug
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/lab/list', methods=['POST'])

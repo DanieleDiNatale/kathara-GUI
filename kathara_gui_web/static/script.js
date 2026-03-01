@@ -1,12 +1,14 @@
+console.log('Script starting...');
+
 const canvas = document.getElementById('topologyCanvas');
 const ctx = canvas.getContext('2d');
 
 const DEVICE_TYPES = {
-    router: { color: '#4A90D9', label: 'ROUTER' },
+    router: { color: '#00BFFF', label: 'ROUTER' },
     switch: { color: '#F5A623', label: 'SWITCH' },
     pc: { color: '#7ED321', label: 'PC' },
     hub: { color: '#D0021B', label: 'HUB' },
-    cloud: { color: '#9013FE', label: 'CLOUD' }
+    cloud: { color: '#9B59B6', label: 'CLOUD' }
 };
 
 const DEVICE_PORTS = {
@@ -42,16 +44,25 @@ const DEVICE_WIDTH = 80;
 const DEVICE_HEIGHT = 60;
 
 function resizeCanvas() {
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
     draw();
 }
 
 window.addEventListener('resize', resizeCanvas);
+
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        resizeCanvas();
+    }, 100);
+});
+
 resizeCanvas();
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     drawGrid();
     
@@ -102,39 +113,191 @@ function drawDevice(device) {
     const x = device.x;
     const y = device.y;
     const isSelected = selectedDevice === device;
+    const cx = x + DEVICE_WIDTH / 2;
+    const cy = y + DEVICE_HEIGHT / 2;
     
-    ctx.fillStyle = type.color;
+    switch (device.type) {
+        case 'pc':
+            drawPC(x, y, type.color, isSelected);
+            break;
+        case 'router':
+            drawRouter(x, y, type.color, isSelected);
+            break;
+        case 'switch':
+            drawSwitch(x, y, type.color, isSelected);
+            break;
+        case 'hub':
+            drawHub(x, y, type.color, isSelected);
+            break;
+        case 'cloud':
+            drawCloud(x, y, type.color, isSelected);
+            break;
+    }
+    
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(device.name, cx, y + DEVICE_HEIGHT + 12);
+    
+    if (device.ip && (device.type === 'pc' || device.type === 'router' || device.type === 'cloud')) {
+        ctx.fillStyle = '#FFFF00';
+        ctx.font = 'bold 9px Arial';
+        ctx.fillText(`${device.eth}:${device.ip}`, cx, y + DEVICE_HEIGHT + 24);
+    }
+}
+
+function drawPC(x, y, color, isSelected) {
+    const cx = x + DEVICE_WIDTH / 2;
+    const cy = y + DEVICE_HEIGHT / 2;
+    
+    ctx.fillStyle = color;
+    ctx.strokeStyle = isSelected ? '#FFD700' : color;
+    ctx.lineWidth = isSelected ? 3 : 0;
+    
+    ctx.fillRect(x + 10, y + 8, 60, 40);
+    if (isSelected) ctx.strokeRect(x + 10, y + 8, 60, 40);
+    
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(x + 15, y + 12, 50, 30);
+    
+    ctx.fillStyle = '#00ff00';
+    ctx.fillRect(x + 55, y + 30, 6, 6);
+    
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 25, y + 48, 30, 8);
+    if (isSelected) ctx.strokeRect(x + 25, y + 48, 30, 8);
+    
     ctx.strokeStyle = isSelected ? '#FFD700' : '#222';
-    ctx.lineWidth = isSelected ? 4 : 3;
+    ctx.lineWidth = isSelected ? 3 : 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 30, y + 56);
+    ctx.lineTo(x + 30, y + 62);
+    ctx.lineTo(x + 20, y + 62);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 50, y + 56);
+    ctx.lineTo(x + 50, y + 62);
+    ctx.lineTo(x + 60, y + 62);
+    ctx.stroke();
+}
+
+function drawRouter(x, y, color, isSelected) {
+    const cx = x + DEVICE_WIDTH / 2;
+    const cy = y + DEVICE_HEIGHT / 2;
+    
+    ctx.fillStyle = '#333333';
+    ctx.strokeStyle = isSelected ? '#FFD700' : '#333333';
+    ctx.lineWidth = isSelected ? 3 : 0;
+    
+    ctx.fillRect(x + 15, y + 15, 50, 30);
+    if (isSelected) ctx.strokeRect(x + 15, y + 15, 50, 30);
+    
+    ctx.fillStyle = '#00BFFF';
+    ctx.fillRect(x + 18, y + 18, 44, 24);
+    
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 30, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#00FF00';
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 30, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#00BFFF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 10, 6, Math.PI, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 5, 10, Math.PI, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 30, y, 14, Math.PI, 0);
+    ctx.stroke();
+}
+
+function drawSwitch(x, y, color, isSelected) {
+    const cx = x + DEVICE_WIDTH / 2;
+    const cy = y + DEVICE_HEIGHT / 2;
+    
+    ctx.fillStyle = color;
+    ctx.strokeStyle = isSelected ? '#FFD700' : color;
+    ctx.lineWidth = isSelected ? 3 : 0;
+    
+    ctx.fillRect(x + 5, y + 15, 70, 35);
+    if (isSelected) ctx.strokeRect(x + 5, y + 15, 70, 35);
+    
+    ctx.fillStyle = 'white';
+    for (let i = 0; i < 4; i++) {
+        const px = x + 15 + i * 16;
+        ctx.fillRect(px, y + 28, 10, 8);
+    }
+    
+    ctx.fillStyle = '#00ff00';
+    for (let i = 0; i < 4; i++) {
+        const px = x + 17 + i * 16;
+        ctx.fillRect(px, y + 30, 6, 4);
+    }
+    
+    ctx.fillStyle = '#333';
+    ctx.fillRect(x + 60, y + 22, 10, 6);
+}
+
+function drawHub(x, y, color, isSelected) {
+    const cx = x + DEVICE_WIDTH / 2;
+    const cy = y + DEVICE_HEIGHT / 2;
+    
+    ctx.fillStyle = color;
+    ctx.strokeStyle = isSelected ? '#FFD700' : color;
+    ctx.lineWidth = isSelected ? 3 : 0;
     
     ctx.beginPath();
-    ctx.roundRect(x, y, DEVICE_WIDTH, DEVICE_HEIGHT, 8);
+    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
     ctx.fill();
-    ctx.stroke();
+    if (isSelected) ctx.stroke();
     
     ctx.fillStyle = 'white';
     ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(type.label, x + DEVICE_WIDTH/2, y + 20);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HUB', cx, cy);
     
-    ctx.font = '11px Arial';
-    ctx.fillText(device.name, x + DEVICE_WIDTH/2, y + 38);
-    
-    if (device.ip) {
-        ctx.fillStyle = '#FFFF00';
-        ctx.font = 'bold 10px Arial';
-        ctx.fillText(`IP:${device.ip}`, x + DEVICE_WIDTH/2, y + 52);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI / 2) + Math.PI / 4;
+        const sx = cx + Math.cos(angle) * 20;
+        const sy = cy + Math.sin(angle) * 20;
+        const ex = cx + Math.cos(angle) * 36;
+        const ey = cy + Math.sin(angle) * 36;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
     }
+}
+
+function drawCloud(x, y, color, isSelected) {
+    const cx = x + DEVICE_WIDTH / 2;
+    const cy = y + DEVICE_HEIGHT / 2;
     
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = color;
+    ctx.strokeStyle = isSelected ? '#FFD700' : color;
+    ctx.lineWidth = isSelected ? 3 : 0;
+    
     ctx.beginPath();
-    for (let i = 0; i < DEVICE_PORTS[device.type]; i++) {
-        const portX = x + 10 + i * 18;
-        const portY = y + DEVICE_HEIGHT;
-        ctx.moveTo(portX, portY);
-        ctx.arc(portX, portY, 5, 0, Math.PI * 2);
-    }
+    ctx.arc(x + 20, cy + 12, 12, Math.PI, 0);
+    ctx.arc(x + 35, cy + 6, 14, Math.PI, 0);
+    ctx.arc(x + 50, cy + 8, 14, Math.PI, 0);
+    ctx.arc(x + 60, cy + 16, 10, Math.PI, 0);
+    ctx.arc(x + 50, cy + 24, 10, 0, Math.PI);
+    ctx.arc(x + 35, cy + 24, 10, 0, Math.PI);
+    ctx.arc(x + 20, cy + 20, 8, 0, Math.PI);
+    ctx.closePath();
     ctx.fill();
+    if (isSelected) ctx.stroke();
 }
 
 function drawConnection(dev1, dev2, color) {
@@ -304,7 +467,7 @@ canvas.addEventListener('dblclick', (e) => {
     const y = e.clientY - rect.top;
     
     const device = getDeviceAt(x, y);
-    if (device) {
+    if (device && (device.type === 'pc' || device.type === 'router' || device.type === 'cloud')) {
         openIPDialog(device);
     }
 });
@@ -404,22 +567,38 @@ function updatePropertiesPanel() {
     const ethEl = document.querySelector('#selectedEth .property-value');
     const ipEl = document.querySelector('#selectedIP .property-value');
     const gatewayEl = document.querySelector('#selectedGateway .property-value');
-    const configEl = document.getElementById('deviceConfig');
-    const configBtn = document.getElementById('saveConfigBtn');
+    const ethRow = document.getElementById('selectedEth');
+    const ipRow = document.getElementById('selectedIP');
+    const gatewayRow = document.getElementById('selectedGateway');
     const setIpBtn = document.getElementById('setIpBtn');
     const pingBtn = document.getElementById('pingBtn');
+    
+    const canHaveIP = selectedDevice && (selectedDevice.type === 'pc' || selectedDevice.type === 'router' || selectedDevice.type === 'cloud');
     
     if (selectedDevice) {
         nameEl.textContent = selectedDevice.name;
         typeEl.textContent = DEVICE_TYPES[selectedDevice.type].label;
         portsEl.textContent = Array.from({length: DEVICE_PORTS[selectedDevice.type]}, (_, i) => `eth${i}`).join(', ');
-        ethEl.textContent = selectedDevice.eth || '-';
-        ipEl.textContent = selectedDevice.ip || '-';
-        gatewayEl.textContent = selectedDevice.gateway || '-';
-        configEl.value = selectedDevice.config || '';
-        configBtn.style.display = 'inline-block';
-        setIpBtn.style.display = 'inline-block';
-        pingBtn.style.display = selectedDevice.ip ? 'inline-block' : 'none';
+        
+        if (canHaveIP) {
+            ethEl.textContent = selectedDevice.eth || '-';
+            ipEl.textContent = selectedDevice.ip || '-';
+            gatewayEl.textContent = selectedDevice.gateway || '-';
+            ethRow.style.display = 'flex';
+            ipRow.style.display = 'flex';
+            gatewayRow.style.display = 'flex';
+            setIpBtn.style.display = 'inline-block';
+            pingBtn.style.display = selectedDevice.ip ? 'inline-block' : 'none';
+        } else {
+            ethEl.textContent = '-';
+            ipEl.textContent = '-';
+            gatewayEl.textContent = '-';
+            ethRow.style.display = 'none';
+            ipRow.style.display = 'none';
+            gatewayRow.style.display = 'none';
+            setIpBtn.style.display = 'none';
+            pingBtn.style.display = 'none';
+        }
     } else if (selectedConnection) {
         const dev1 = devices.find(d => d.name === selectedConnection.from);
         const dev2 = devices.find(d => d.name === selectedConnection.to);
@@ -429,8 +608,9 @@ function updatePropertiesPanel() {
         ethEl.textContent = '-';
         ipEl.textContent = '-';
         gatewayEl.textContent = '-';
-        configEl.value = '';
-        configBtn.style.display = 'none';
+        ethRow.style.display = 'none';
+        ipRow.style.display = 'none';
+        gatewayRow.style.display = 'none';
         setIpBtn.style.display = 'none';
         pingBtn.style.display = 'none';
     } else {
@@ -440,8 +620,9 @@ function updatePropertiesPanel() {
         ethEl.textContent = '-';
         ipEl.textContent = '-';
         gatewayEl.textContent = '-';
-        configEl.value = '';
-        configBtn.style.display = 'none';
+        ethRow.style.display = 'none';
+        ipRow.style.display = 'none';
+        gatewayRow.style.display = 'none';
         setIpBtn.style.display = 'none';
         pingBtn.style.display = 'none';
     }
@@ -513,13 +694,27 @@ document.getElementById('pingBtn').addEventListener('click', () => {
     if (selectedDevice && selectedDevice.ip) {
         const targetIP = prompt(`Enter IP address to ping from ${selectedDevice.name}:`, selectedDevice.gateway || '');
         if (targetIP) {
-            log(`[PING] ${selectedDevice.name} ping ${targetIP}...`, '#00FFFF');
-            fetch('/ping', {
+            if (!currentLabPath) {
+                log(`[PING] Error: No lab exported. Please export and start the lab first.`, '#FF6B6B');
+                return;
+            }
+            log(`[PING] ${selectedDevice.name} ping ${targetIP} via ${selectedDevice.eth || 'eth0'}...`, '#00FFFF');
+            fetch('/api/ping', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ device_name: selectedDevice.name, target_ip: targetIP, eth: selectedDevice.eth || 'eth0' })
+                body: JSON.stringify({ 
+                    device_name: selectedDevice.name, 
+                    target_ip: targetIP, 
+                    eth: selectedDevice.eth || 'eth0',
+                    lab_path: currentLabPath 
+                })
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(`HTTP ${res.status}: ${text}`); });
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.success) {
                     log(`[PING] ${data.result}`, data.success ? '#7ED321' : '#FF6B6B');
@@ -528,16 +723,9 @@ document.getElementById('pingBtn').addEventListener('click', () => {
                 }
             })
             .catch(err => {
-                log(`[PING] Error: ${err}`, '#FF6B6B');
+                log(`[PING] Error: ${err.message}`, '#FF6B6B');
             });
         }
-    }
-});
-
-document.getElementById('saveConfigBtn').addEventListener('click', () => {
-    if (selectedDevice) {
-        selectedDevice.config = document.getElementById('deviceConfig').value;
-        log(`[CFG] Saved config for ${selectedDevice.name}`);
     }
 });
 
@@ -554,6 +742,9 @@ async function apiCall(endpoint, data) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     return response.json();
 }
 
@@ -626,6 +817,228 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
     });
     log(result.message || result.error, result.success ? '#9013FE' : '#ff0000');
 });
+
+document.getElementById('runCmdBtn').addEventListener('click', executeCommand);
+document.getElementById('commandInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') executeCommand();
+});
+
+function executeCommand() {
+    const input = document.getElementById('commandInput');
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    
+    log(`[CMD] ${cmd}`, '#FFD700');
+    input.value = '';
+    
+    const parts = cmd.toLowerCase().split(/\s+/);
+    const command = parts[0];
+    
+    try {
+        switch(command) {
+            case 'add':
+                handleAddCommand(parts);
+                break;
+            case 'connect':
+            case 'conn':
+                handleConnectCommand(parts);
+                break;
+            case 'ip':
+                handleIPCommand(parts);
+                break;
+            case 'del':
+            case 'delete':
+                handleDeleteCommand(parts);
+                break;
+            case 'list':
+                handleListCommand();
+                break;
+            case 'help':
+                showCommandHelp();
+                break;
+            default:
+                log(`[ERROR] Unknown command: ${command}. Type 'help' for available commands.`, '#FF6B6B');
+        }
+    } catch (err) {
+        log(`[ERROR] ${err.message}`, '#FF6B6B');
+    }
+}
+
+function handleAddCommand(parts) {
+    if (parts.length < 3) {
+        log('[ERROR] Usage: add router|switch|pc|hub|cloud NAME', '#FF6B6B');
+        return;
+    }
+    const type = parts[1];
+    const name = parts[2].toUpperCase();
+    
+    if (!DEVICE_TYPES[type]) {
+        log(`[ERROR] Unknown device type: ${type}`, '#FF6B6B');
+        return;
+    }
+    
+    if (devices.find(d => d.name === name)) {
+        log(`[ERROR] Device ${name} already exists`, '#FF6B6B');
+        return;
+    }
+    
+    const typeCount = parts[1];
+    deviceCounter[type] = (deviceCounter[type] || 0) + 1;
+    
+    const newDevice = {
+        name,
+        type,
+        x: 100 + (devices.length % 4) * 150,
+        y: 100 + Math.floor(devices.length / 4) * 120,
+        eth: 'eth0',
+        ip: '',
+        gateway: '',
+        config: ''
+    };
+    
+    devices.push(newDevice);
+    updateDeviceSelect();
+    draw();
+    log(`[+] Added: ${name} (${type.toUpperCase()})`, DEVICE_TYPES[type].color);
+}
+
+function handleConnectCommand(parts) {
+    if (parts.length < 3) {
+        log('[ERROR] Usage: connect NAME1 NAME2 [cable_type]', '#FF6B6B');
+        return;
+    }
+    
+    const name1 = parts[1].toUpperCase();
+    const name2 = parts[2].toUpperCase();
+    const cableType = parts[3] || 'copper-straight';
+    
+    const dev1 = devices.find(d => d.name === name1);
+    const dev2 = devices.find(d => d.name === name2);
+    
+    if (!dev1) {
+        log(`[ERROR] Device ${name1} not found`, '#FF6B6B');
+        return;
+    }
+    if (!dev2) {
+        log(`[ERROR] Device ${name2} not found`, '#FF6B6B');
+        return;
+    }
+    
+    if (dev1 === dev2) {
+        log('[ERROR] Cannot connect device to itself', '#FF6B6B');
+        return;
+    }
+    
+    const exists = connections.find(c => 
+        (c.from === name1 && c.to === name2) || (c.from === name2 && c.to === name1)
+    );
+    if (exists) {
+        log(`[ERROR] Connection ${name1} <-> ${name2} already exists`, '#FF6B6B');
+        return;
+    }
+    
+    if (!CABLE_TYPES[cableType]) {
+        log(`[WARN] Unknown cable type: ${cableType}, using copper-straight`, '#F5A623');
+    }
+    
+    connections.push({
+        from: name1,
+        to: name2,
+        cableType: CABLE_TYPES[cableType] ? cableType : 'copper-straight',
+        color: CABLE_TYPES[cableType]?.color || CABLE_TYPES['copper-straight'].color
+    });
+    
+    updateConnectionsList();
+    draw();
+    log(`[LINK] ${name1} <-> ${name2} (${cableType})`, '#00FFFF');
+}
+
+function handleIPCommand(parts) {
+    if (parts.length < 4) {
+        log('[ERROR] Usage: ip NAME ETH IP [gateway]', '#FF6B6B');
+        return;
+    }
+    
+    const name = parts[1].toUpperCase();
+    const eth = parts[2];
+    const ip = parts[3];
+    const gateway = parts[4] || '';
+    
+    const device = devices.find(d => d.name === name);
+    if (!device) {
+        log(`[ERROR] Device ${name} not found`, '#FF6B6B');
+        return;
+    }
+    
+    if (!['eth0', 'eth1', 'eth2', 'eth3'].includes(eth)) {
+        log(`[ERROR] Invalid interface: ${eth}. Use eth0-eth3.`, '#FF6B6B');
+        return;
+    }
+    
+    device.eth = eth;
+    device.ip = ip;
+    device.gateway = gateway;
+    
+    updatePropertiesPanel();
+    draw();
+    log(`[IP] ${name} ${eth}:${ip}` + (gateway ? ` gateway:${gateway}` : ''), '#FFFF00');
+}
+
+function handleDeleteCommand(parts) {
+    if (parts.length < 2) {
+        log('[ERROR] Usage: del NAME', '#FF6B6B');
+        return;
+    }
+    
+    const name = parts[1].toUpperCase();
+    const deviceIndex = devices.findIndex(d => d.name === name);
+    
+    if (deviceIndex === -1) {
+        log(`[ERROR] Device ${name} not found`, '#FF6B6B');
+        return;
+    }
+    
+    connections = connections.filter(c => c.from !== name && c.to !== name);
+    devices.splice(deviceIndex, 1);
+    
+    if (selectedDevice?.name === name) {
+        selectedDevice = null;
+    }
+    
+    updateDeviceSelect();
+    updatePropertiesPanel();
+    updateConnectionsList();
+    draw();
+    log(`[-] Deleted: ${name}`, '#D0021B');
+}
+
+function handleListCommand() {
+    if (devices.length === 0) {
+        log('[INFO] No devices in topology', '#888');
+        return;
+    }
+    
+    log(`[INFO] Devices (${devices.length}):`, '#888');
+    devices.forEach(d => {
+        const ipInfo = d.ip ? ` ${d.eth}:${d.ip}` : ' (no IP)';
+        log(`  - ${d.name} (${d.type})${ipInfo}`, '#888');
+    });
+    
+    log(`[INFO] Connections (${connections.length}):`, '#888');
+    connections.forEach(c => {
+        log(`  - ${c.from} <-> ${c.to}`, '#888');
+    });
+}
+
+function showCommandHelp() {
+    log('[HELP] Available commands:', '#00FFFF');
+    log('  add router|switch|pc|hub|cloud NAME  - Add device', '#888');
+    log('  connect NAME1 NAME2 [cable]          - Connect devices', '#888');
+    log('  ip NAME eth0|eth1 IP [gateway]       - Set IP address', '#888');
+    log('  del NAME                              - Delete device', '#888');
+    log('  list                                  - Show topology', '#888');
+    log('  help                                  - Show this help', '#888');
+}
 
 document.getElementById('resetBtn').addEventListener('click', () => {
     devices = [];

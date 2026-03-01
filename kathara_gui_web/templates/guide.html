@@ -3,20 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guida Kathara - Reti di Calcolatori</title>
+    <title>Guida Kathara GUI </title>
     <link rel="stylesheet" href="{{ url_for('static', filename='guide.css') }}">
 </head>
 <body>
     <header>
-        <h1>📚 Guida Kathara - Reti di Calcolatori</h1>
-        <a href="/" class="back-btn">← Torna alla GUI</a>
+        <h1>📚 Guida Kathara GUI </h1>
     </header>
     
     <main>
         <section id="introduzione">
             <h2>Introduzione a Kathara</h2>
-            <p>Kathara è un emulatore di rete basato su Docker che permette di creare scenari di rete realistici. È ampiamente utilizzato per esercitazioni CCNA e per simulare reti aziendali.</p>
+            <p>Kathara è un emulatore di rete basato su Docker che permette di creare scenari di rete realistici. È Utilizzato solo per questo corso "SPECIALE" XD.</p>
             <p><strong>Struttura base:</strong> Ogni lab è una cartella con file di configurazione.</p>
+        </section>
+
+        <section id="gui">
+            <h2>🖥️ Interfaccia Grafica (GUI)</h2>
+            <p>La GUI permette di creare topologie di rete visivamente e esportarle per Kathara.</p>
+            
+            <h3>Dispositivi Disponibili</h3>
+            <ul>
+                <li><strong>PC</strong> - Computer</li>
+                <li><strong>Router</strong> - Dispositivo di routing (colore azzurro)</li>
+                <li><strong>Switch</strong> - Commutatore di rete (colore arancione)</li>
+                <li><strong>Hub</strong> - Concentratore di rete (colore rosso)</li>
+                <li><strong>Cloud</strong> - Connettività esterna (colore viola)</li>
+            </ul>
+
+            <h3>Comandi da Console</h3>
+            <p>Puoi usare i comandi testuali nella sezione "Console Commands":</p>
+            <pre># Aggiungi dispositivo
+add router R1
+add pc PC1
+add switch SW1
+
+# Collega dispositivi (cavi: copper-straight, copper-cross, fiber, serial, phone, coaxial)
+connect PC1 R1 copper-straight
+connect PC2 SW1
+
+# Configura IP (eth0-eth3)
+ip PC1 eth0 192.168.1.10 192.168.1.254
+
+# Elimina dispositivo
+del PC1
+
+# Lista topologia
+list
+
+# Aiuto
+help</pre>
+
+            <h3>Funzionalità</h3>
+            <ul>
+                <li><strong>SET IP:</strong> Configura indirizzo IP e gateway</li>
+                <li><strong>PING:</strong> Testa connettività direttamente dalla GUI</li>
+                <li><strong>EXPORT:</strong> Esporta file di configurazione Kathara</li>
+                <li><strong>START/STOP:</strong> Avvia/ferma i container</li>
+                <li><strong>CONNECT:</strong> Connettiti a un dispositivo</li>
+            </ul>
         </section>
 
         <section id="struttura">

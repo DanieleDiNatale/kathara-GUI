@@ -490,6 +490,9 @@ class MainWindow(QMainWindow):
         items = self.canvas.scene().selectedItems()
         if items and isinstance(items[0], DeviceItem):
             device = items[0]
+            if device.device_type in ['hub', 'switch']:
+                self.console.log(f"[INFO] {device.device_type.upper()} cannot have IP address", '#FF6B6B')
+                return
             dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, device.eth, self)
             if dialog.exec():
                 eth, ip, gateway = dialog.get_values()
@@ -512,16 +515,34 @@ class MainWindow(QMainWindow):
             device = items[0]
             self.name_label.setText(device.name)
             self.type_label.setText(DEVICE_TYPES[device.device_type]['label'])
-            self.eth_label.setText(device.eth)
-            self.ip_label.setText(device.ip_address if device.ip_address else "-")
-            self.gateway_label.setText(device.gateway if device.gateway else "-")
-            self.config_ip_btn.setEnabled(True)
+            
+            can_have_ip = device.device_type in ['pc', 'router', 'cloud']
+            
+            if can_have_ip:
+                self.eth_label.setText(device.eth)
+                self.ip_label.setText(device.ip_address if device.ip_address else "-")
+                self.gateway_label.setText(device.gateway if device.gateway else "-")
+                self.eth_label.setVisible(True)
+                self.ip_label.setVisible(True)
+                self.gateway_label.setVisible(True)
+                self.config_ip_btn.setEnabled(True)
+            else:
+                self.eth_label.setText("-")
+                self.ip_label.setText("-")
+                self.gateway_label.setText("-")
+                self.eth_label.setVisible(False)
+                self.ip_label.setVisible(False)
+                self.gateway_label.setVisible(False)
+                self.config_ip_btn.setEnabled(False)
         else:
             self.name_label.setText("-")
             self.type_label.setText("-")
             self.eth_label.setText("-")
             self.ip_label.setText("-")
             self.gateway_label.setText("-")
+            self.eth_label.setVisible(True)
+            self.ip_label.setVisible(True)
+            self.gateway_label.setVisible(True)
             self.config_ip_btn.setEnabled(False)
     
     def on_cable_changed(self):

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kathara Network Designer - Web</title>
+    <title>Kathara Network Designer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-container" id="main-app">
         <header class="toolbar">
             <div class="toolbar-section">
                 <h1>Kathara Web GUI</h1>
@@ -28,7 +28,7 @@
                 <button class="action-btn new" id="resetBtn">NEW</button>
                 <button class="action-btn start" id="startBtn">START</button>
                 <button class="action-btn stop" id="stopBtn">STOP</button>
-                <a href="/guide" class="action-btn guide">GUIDE</a>
+                <a href="/guide" target="_blank" class="action-btn guide">GUIDE</a>
             </div>
         </header>
 
@@ -63,13 +63,7 @@
                     <button class="btn primary" id="setIpBtn" style="display:none;">SET IP</button>
                     <button class="btn ping" id="pingBtn" style="display:none;">PING</button>
                 </div>
-                
-                <div class="panel">
-                    <h3>CONFIGURATION</h3>
-                    <textarea id="deviceConfig" placeholder="Enter startup commands..."></textarea>
-                    <button class="btn primary" id="saveConfigBtn" style="display:none;">SAVE CONFIG</button>
-                </div>
-                
+                                
                 <div class="panel">
                     <h3>CABLE TYPE</h3>
                     <select id="cableType">
@@ -99,10 +93,24 @@
                     </select>
                     <button class="btn secondary" id="connectBtn">CONNECT</button>
                 </div>
+
+                <div class="panel">
+                    <h3>CONSOLE COMMANDS</h3>
+                    <input type="text" id="commandInput" placeholder="add router R1">
+                    <button class="btn command" id="runCmdBtn">RUN</button>
+                    <div class="command-help">
+                        <small>Commands:<br>
+                        add router|switch|pc|hub|cloud NAME<br>
+                        connect NAME1 NAME2 [cable]<br>
+                        ip NAME ETH IP [gateway]<br>
+                        del NAME<br>
+                        list</small>
+                    </div>
+                </div>
             </aside>
 
             <main class="canvas-container">
-                <canvas id="topologyCanvas"></canvas>
+                <canvas id="topologyCanvas" width="800" height="600"></canvas>
             </main>
 
             <aside class="properties-panel">
