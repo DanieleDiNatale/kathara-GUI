@@ -19,25 +19,15 @@ GUI per Kathara Network Emulator in stile Cisco Packet Tracer.
 - **Gestione Lab**: Avvia, ferma e connettiti ai container
 - **Console**: Messaggi di log in tempo reale
 
-### GUI Desktop
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ TOOLBAR: Dispositivi | Connect | Delete | New | Start | Stop  │
-├───────────────────────────────────────────┬───────────────────────┤
-│                                           │ DEVICE PROPERTIES    │
-│           AREA CANVAS                     │ Nome, Tipo, IP       │
-│        (Topologia Rete)                  │ [SET IP]             │
-│                                           ├───────────────────────┤
-│    ┌─────┐      ┌─────┐                  │ CABLE TYPE           │
-│    │ PC1 │──────│ROUTER│                │ (seleziona tipo)    │
-│    └─────┘      └─────┘                  ├───────────────────────┤
-│                        │                  │ CONNECTIONS           │
-│                   ┌─────┐                  │ (lista cavi)         │
-│                   │ PC2 │                  ├───────────────────────┤
-│                   └─────┘                  │ CONSOLE              │
-│                                           │ (messaggi)           │
-└───────────────────────────────────────────┴───────────────────────┘
-```
+### GUI WEB
+
+![imageURL]()
+
+
+### GUI DESKTOP
+
+![imageURL]()
+
 
 ## 🚀 Installazione
 
