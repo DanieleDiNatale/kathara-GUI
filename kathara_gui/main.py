@@ -214,8 +214,8 @@ class ConnectionItem(QGraphicsPathItem):
     def update_position(self):
         path = QPainterPath()
         
-        start = self.start_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
-        end = self.end_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
+        start = self.start_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT)
+        end = self.end_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT)
         
         path.moveTo(start.x(), start.y())
         
