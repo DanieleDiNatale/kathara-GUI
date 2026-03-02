@@ -26,7 +26,7 @@ def add_device():
     device_type = data.get('type')
     
     device_counter[device_type] += 1
-    name = f"{device_type.upper()}{device_counter[device_type]}"
+    name = f"{device_type.lower()}{device_counter[device_type]}"
     
     return jsonify({'success': True, 'name': name})
 
@@ -69,8 +69,8 @@ def export_lab():
             eth1 = device_interfaces[dev1].get('next_eth', 0)
             eth2 = device_interfaces[dev2].get('next_eth', 0)
             
-            conf_lines.append(f"{dev1}[{eth1}]={net_letter}")
-            conf_lines.append(f"{dev2}[{eth2}]={net_letter}")
+            conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
+            conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
             
             device_interfaces[dev1]['next_eth'] = eth1 + 1
             device_interfaces[dev2]['next_eth'] = eth2 + 1
@@ -81,13 +81,9 @@ def export_lab():
         return jsonify({'success': False, 'error': 'No connections! Connect devices before exporting.'}), 400
     
     lab_conf_path = os.path.join(lab_path, 'lab.conf')
-    content = '\n'.join(conf_lines) + '\n'
-    with open(lab_conf_path, 'w', newline='') as f:
-        f.write(content)
-    
-    with open(lab_conf_path, 'rb') as rf:
-        debug_content = rf.read()
-    print(f"[DEBUG] lab.conf: {debug_content!r}")
+    content = '\r\n'.join(conf_lines) + '\r\n'
+    with open(lab_conf_path, 'wb') as f:
+        f.write(content.encode('utf-8'))
     
     with open(os.path.join(lab_path, 'topology.txt'), 'w', encoding='utf-8') as f:
         f.write("Kathara Network Topology\n")
@@ -103,6 +99,14 @@ def export_lab():
         f.write("  phone: Phone (RJ11)\n")
         f.write("  coaxial: Coaxial\n")
     
+    router_networks = {}
+    for conn in connections:
+        for dev in [conn['from'], conn['to']]:
+            if dev not in router_networks:
+                router_networks[dev] = set()
+        router_networks[conn['from']].add(conn['to'])
+        router_networks[conn['to']].add(conn['from'])
+    
     for device in devices:
         name = device['name']
         device_type = device.get('type', 'pc')
@@ -112,14 +116,21 @@ def export_lab():
         
         startup_lines = []
         
-        if ip and device_type in ['pc', 'router', 'cloud']:
-            startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
-            
-            if gateway:
-                startup_lines.append(f"ip route add default via {gateway}")
-        
         if device_type == 'router':
+            num_networks = len(router_networks.get(name, []))
+            for i in range(num_networks):
+                if i == 0:
+                    router_ip = "10.0.0.254"
+                else:
+                    router_ip = f"192.168.{i}.254"
+                startup_lines.append(f"ip addr add {router_ip}/24 dev eth{i}")
             startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
+        else:
+            if ip and device_type in ['pc', 'cloud']:
+                startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
+                
+                if gateway:
+                    startup_lines.append(f"ip route add default via {gateway}")
         
         config = '\n'.join(startup_lines) if startup_lines else "# No configuration"
         
@@ -203,16 +214,24 @@ def ping_device():
                 eth1 = device_interfaces[dev1]
                 eth2 = device_interfaces[dev2]
                 
-                conf_lines.append(f"{dev1}[{eth1}]={net_letter}")
-                conf_lines.append(f"{dev2}[{eth2}]={net_letter}")
+                conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
+                conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
                 
                 device_interfaces[dev1] = eth1 + 1
                 device_interfaces[dev2] = eth2 + 1
         
         lab_conf_path = os.path.join(lab_path, 'lab.conf')
-        content = '\n'.join(conf_lines) + '\n'
-        with open(lab_conf_path, 'w', newline='') as f:
-            f.write(content)
+        content = '\r\n'.join(conf_lines) + '\r\n'
+        with open(lab_conf_path, 'wb') as f:
+            f.write(content.encode('utf-8'))
+        
+        router_networks = {}
+        for conn in connections:
+            for dev in [conn['from'], conn['to']]:
+                if dev not in router_networks:
+                    router_networks[dev] = set()
+            router_networks[conn['from']].add(conn['to'])
+            router_networks[conn['to']].add(conn['from'])
         
         for device in devices:
             name = device['name']
@@ -223,14 +242,21 @@ def ping_device():
             
             startup_lines = []
             
-            if ip and device_type in ['pc', 'router', 'cloud']:
-                startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
-                
-                if gateway:
-                    startup_lines.append(f"ip route add default via {gateway}")
-            
             if device_type == 'router':
+                num_networks = len(router_networks.get(name, []))
+                for i in range(num_networks):
+                    if i == 0:
+                        router_ip = "10.0.0.254"
+                    else:
+                        router_ip = f"192.168.{i}.254"
+                    startup_lines.append(f"ip addr add {router_ip}/24 dev eth{i}")
                 startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
+            else:
+                if ip and device_type in ['pc', 'cloud']:
+                    startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
+                    
+                    if gateway:
+                        startup_lines.append(f"ip route add default via {gateway}")
             
             config = '\n'.join(startup_lines) if startup_lines else "# No configuration"
             

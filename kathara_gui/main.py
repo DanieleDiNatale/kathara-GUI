@@ -2,17 +2,19 @@ import sys
 import os
 import subprocess
 import threading
+import math
 
 try:
     from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QGraphicsView, QGraphicsScene, 
                              QGraphicsItem, QGraphicsEllipseItem, QGraphicsRectItem,
-                             QGraphicsTextItem, QGraphicsLineItem, QLabel, QPushButton,
-                             QToolBar, QStatusBar, QListWidget, QLineEdit,
+                             QGraphicsTextItem, QGraphicsLineItem, QGraphicsPathItem,
+                             QLabel, QPushButton, QToolBar, QStatusBar, QListWidget, QLineEdit,
                              QTextEdit, QFileDialog, QMessageBox, QGroupBox, QFormLayout,
-                             QDialog, QDialogButtonBox, QComboBox)
-    from PyQt6.QtCore import Qt, QPointF, pyqtSignal
-    from PyQt6.QtGui import QColor, QPen, QBrush, QAction, QPainter, QFont
+                             QDialog, QDialogButtonBox, QComboBox, QInputDialog)
+    from PyQt6.QtCore import Qt, QPointF, pyqtSignal, QRectF
+    from PyQt6.QtGui import (QColor, QPen, QBrush, QAction, QPainter, QFont, 
+                           QPainterPath, QPixmap, QTransform)
     print("All imports OK")
 except Exception as e:
     print(f"Import error: {e}")
@@ -20,11 +22,11 @@ except Exception as e:
     sys.exit(1)
 
 DEVICE_TYPES = {
-    'router': {'color': '#4A90D9', 'label': 'ROUTER'},
+    'router': {'color': '#00BFFF', 'label': 'ROUTER'},
     'switch': {'color': '#F5A623', 'label': 'SWITCH'},
     'pc': {'color': '#7ED321', 'label': 'PC'},
     'hub': {'color': '#D0021B', 'label': 'HUB'},
-    'cloud': {'color': '#9013FE', 'label': 'CLOUD'},
+    'cloud': {'color': '#9B59B6', 'label': 'CLOUD'},
 }
 
 CABLE_TYPES = {
@@ -36,6 +38,9 @@ CABLE_TYPES = {
     'coaxial': {'label': 'Coaxial', 'color': '#795548'},
 }
 
+DEVICE_WIDTH = 80
+DEVICE_HEIGHT = 60
+
 class DeviceItem(QGraphicsRectItem):
     def __init__(self, device_type, name, x, y):
         self.device_type = device_type
@@ -44,39 +49,181 @@ class DeviceItem(QGraphicsRectItem):
         self.ip_address = ""
         self.gateway = ""
         
-        super().__init__(-40, -30, 80, 60)
+        super().__init__(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT)
         self.setPos(x, y)
         
-        self.setBrush(QBrush(QColor(DEVICE_TYPES[device_type]['color'])))
-        self.setPen(QPen(QColor('white'), 3))
+        self.setBrush(QBrush(Qt.GlobalColor.transparent))
+        self.setPen(QPen(Qt.GlobalColor.transparent))
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         
         self.label = QGraphicsTextItem(self)
         self.label.setPlainText(DEVICE_TYPES[device_type]['label'])
         self.label.setDefaultTextColor(QColor('white'))
-        self.label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
-        self.label.setTextWidth(80)
-        self.label.setPos(-40, -40)
+        self.label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+        self.label.setTextWidth(DEVICE_WIDTH)
+        self.label.setPos((DEVICE_WIDTH - self.label.textWidth()) / 2, -18)
         self.label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         
         self.name_label = QGraphicsTextItem(self)
         self.name_label.setPlainText(name)
         self.name_label.setDefaultTextColor(QColor('white'))
         self.name_label.setFont(QFont("Arial", 9))
-        self.name_label.setTextWidth(80)
-        self.name_label.setPos(-40, 12)
+        self.name_label.setTextWidth(DEVICE_WIDTH)
+        self.name_label.setPos((DEVICE_WIDTH - self.name_label.textWidth()) / 2, DEVICE_HEIGHT + 4)
         self.name_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.name_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         
         self.ip_label = QGraphicsTextItem(self)
         self.ip_label.setPlainText("")
         self.ip_label.setDefaultTextColor(QColor('#FFFF00'))
         self.ip_label.setFont(QFont("Arial", 8))
-        self.ip_label.setTextWidth(80)
-        self.ip_label.setPos(-40, 38)
+        self.ip_label.setTextWidth(DEVICE_WIDTH)
+        self.ip_label.setPos((DEVICE_WIDTH - self.ip_label.textWidth()) / 2, DEVICE_HEIGHT + 16)
         self.ip_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.ip_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         
         self.connections = []
+        self.connection_highlight = False
+    
+    def boundingRect(self):
+        return QRectF(0, -20, DEVICE_WIDTH, DEVICE_HEIGHT + 40)
+    
+    def paint(self, painter, option, widget=None):
+        color = DEVICE_TYPES[self.device_type]['color']
+        is_selected = self.isSelected() or self.connection_highlight
+        
+        offset_y = -20
+        h_offset = DEVICE_HEIGHT + 20
+        
+        if self.device_type == 'pc':
+            self._draw_pc(painter, color, is_selected, offset_y)
+        elif self.device_type == 'router':
+            self._draw_router(painter, color, is_selected, offset_y)
+        elif self.device_type == 'switch':
+            self._draw_switch(painter, color, is_selected, offset_y)
+        elif self.device_type == 'hub':
+            self._draw_hub(painter, color, is_selected, offset_y)
+        elif self.device_type == 'cloud':
+            self._draw_cloud(painter, color, is_selected, offset_y)
+    
+    def _draw_pc(self, painter, color, is_selected, offset_y=0):
+        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+        
+        painter.setBrush(QBrush(QColor(color)))
+        painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
+        painter.drawRect(x + 10, y + 8, 60, 40)
+        
+        painter.setBrush(QBrush(QColor('#1a1a2e')))
+        painter.setPen(QPen(Qt.GlobalColor.transparent))
+        painter.drawRect(x + 15, y + 12, 50, 30)
+        
+        painter.setBrush(QBrush(QColor('#00ff00')))
+        painter.drawRect(x + 55, y + 30, 6, 6)
+        
+        painter.setBrush(QBrush(QColor(color)))
+        painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
+        painter.drawRect(x + 25, y + 48, 30, 8)
+        
+        painter.setPen(QPen(QColor('#222'), 2))
+        painter.drawLine(x + 30, y + 56, x + 30, y + 62)
+        painter.drawLine(x + 30, y + 62, x + 20, y + 62)
+        painter.drawLine(x + 50, y + 56, x + 50, y + 62)
+        painter.drawLine(x + 50, y + 62, x + 60, y + 62)
+    
+    def _draw_router(self, painter, color, is_selected, offset_y=0):
+        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+        cx, cy = x + w/2, y + h/2
+        
+        painter.setBrush(QBrush(QColor('#333333')))
+        painter.setPen(QPen(QColor('#333333') if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
+        painter.drawRect(x + 15, y + 15, 50, 30)
+        
+        painter.setBrush(QBrush(QColor('#00BFFF')))
+        painter.setPen(QPen(Qt.GlobalColor.transparent))
+        painter.drawRect(x + 18, y + 18, 44, 24)
+        
+        painter.setBrush(QBrush(QColor('#1a1a2e')))
+        painter.drawEllipse(int(cx) - 8, int(cy) - 8, 16, 16)
+        
+        painter.setBrush(QBrush(QColor('#00FF00')))
+        painter.drawEllipse(int(cx) - 4, int(cy) - 4, 8, 8)
+        
+        painter.setPen(QPen(QColor('#00BFFF'), 2))
+        painter.drawArc(int(cx) - 6, int(y + 10) - 6, 12, 12, 0, 180 * 16)
+        painter.drawArc(int(cx) - 10, int(y + 5) - 10, 20, 20, 0, 180 * 16)
+        painter.drawArc(int(cx) - 14, int(y) - 14, 28, 28, 0, 180 * 16)
+    
+    def _draw_switch(self, painter, color, is_selected, offset_y=0):
+        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+        
+        painter.setBrush(QBrush(QColor(color)))
+        painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
+        painter.drawRect(x + 5, y + 15, 70, 35)
+        
+        painter.setBrush(QBrush(QColor('white')))
+        painter.setPen(QPen(Qt.GlobalColor.transparent))
+        for i in range(4):
+            px = x + 15 + i * 16
+            painter.drawRect(px, y + 28, 10, 8)
+        
+        painter.setBrush(QBrush(QColor('#00ff00')))
+        for i in range(4):
+            px = x + 17 + i * 16
+            painter.drawRect(px, y + 30, 6, 4)
+        
+        painter.setBrush(QBrush(QColor('#333')))
+        painter.drawRect(x + 60, y + 22, 10, 6)
+    
+    def _draw_hub(self, painter, color, is_selected, offset_y=0):
+        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+        cx, cy = x + w/2, y + h/2
+        
+        painter.setBrush(QBrush(QColor(color)))
+        painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
+        painter.drawEllipse(int(cx) - 28, int(cy) - 28, 56, 56)
+        
+        painter.setPen(QPen(QColor('white'), 2))
+        for i in range(4):
+            angle = (i * math.pi / 2) + math.pi / 4
+            sx = cx + math.cos(angle) * 20
+            sy = cy + math.sin(angle) * 20
+            ex = cx + math.cos(angle) * 36
+            ey = cy + math.sin(angle) * 36
+            painter.drawLine(int(sx), int(sy), int(ex), int(ey))
+    
+    def _draw_cloud(self, painter, color, is_selected, offset_y=0):
+        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+        cx, cy = x + w/2, y + h/2
+        
+        painter.setBrush(QBrush(QColor(color)))
+        painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
+        
+        path = QPainterPath()
+        path.moveTo(x + 20, cy + 12)
+        
+        rect1 = QRectF(x + 8, cy - 12, 24, 24)
+        path.arcMoveTo(rect1, 180)
+        path.arcTo(rect1, 180, 180)
+        
+        rect2 = QRectF(x + 21, cy - 8, 28, 28)
+        path.arcTo(rect2, 180, 180)
+        
+        rect3 = QRectF(x + 36, cy - 6, 28, 28)
+        path.arcTo(rect3, 180, 180)
+        
+        rect4 = QRectF(x + 50, cy, 20, 20)
+        path.arcTo(rect4, 180, 180)
+        
+        rect5 = QRectF(x + 40, cy + 8, 20, 20)
+        path.arcTo(rect5, 0, 180)
+        
+        rect6 = QRectF(x + 20, cy + 8, 20, 20)
+        path.arcTo(rect6, 0, 180)
+        
+        path.closeSubpath()
+        painter.drawPath(path)
     
     def set_ip(self, eth, ip, gateway=""):
         self.eth = eth
@@ -84,10 +231,11 @@ class DeviceItem(QGraphicsRectItem):
         self.gateway = gateway
         if ip:
             self.ip_label.setPlainText(f"{eth}:{ip}")
+            self.ip_label.setPos((DEVICE_WIDTH - self.ip_label.textWidth()) / 2, DEVICE_HEIGHT + 24)
         else:
             self.ip_label.setPlainText("")
 
-class ConnectionItem(QGraphicsLineItem):
+class ConnectionItem(QGraphicsPathItem):
     def __init__(self, start_device, end_device, cable_type='copper-straight'):
         super().__init__()
         self.start_device = start_device
@@ -96,13 +244,43 @@ class ConnectionItem(QGraphicsLineItem):
         
         color = QColor(CABLE_TYPES[cable_type]['color'])
         self.setPen(QPen(color, 5))
+        self.setBrush(QBrush(Qt.GlobalColor.transparent))
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.update_position()
     
     def update_position(self):
-        start = self.start_device.scenePos() + QPointF(0, 30)
-        end = self.end_device.scenePos() + QPointF(0, 30)
-        self.setLine(start.x(), start.y(), end.x(), end.y())
+        path = QPainterPath()
+        
+        start = self.start_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
+        end = self.end_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
+        
+        path.moveTo(start.x(), start.y())
+        
+        dx = end.x() - start.x()
+        dy = end.y() - start.y()
+        
+        cp1x = start.x() + dx * 0.25
+        cp1y = start.y() + dy * 0.1
+        cp2x = end.x() - dx * 0.25
+        cp2y = end.y() - dy * 0.1
+        
+        path.cubicTo(cp1x, cp1y, cp2x, cp2y, end.x(), end.y())
+        
+        self.setPath(path)
+    
+    def paint(self, painter, option, widget=None):
+        color = QColor(CABLE_TYPES[self.cable_type]['color'])
+        painter.setPen(QPen(color, 5))
+        painter.setBrush(QBrush(color))
+        
+        painter.drawPath(self.path())
+        
+        start = self.start_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
+        end = self.end_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
+        
+        painter.setBrush(QBrush(color))
+        painter.drawEllipse(int(start.x()) - 7, int(start.y()) - 7, 14, 14)
+        painter.drawEllipse(int(end.x()) - 7, int(end.y()) - 7, 14, 14)
 
 class TopologyScene(QGraphicsScene):
     device_added = pyqtSignal(str, str, float, float)
@@ -126,7 +304,7 @@ class TopologyScene(QGraphicsScene):
     
     def add_device(self, device_type, x, y):
         self.device_counter[device_type] += 1
-        name = f"{device_type.upper()}{self.device_counter[device_type]}"
+        name = f"{device_type.lower()}{self.device_counter[device_type]}"
         
         if name in self.devices:
             return None
@@ -172,30 +350,49 @@ class TopologyScene(QGraphicsScene):
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            item = self.itemAt(event.scenePos(), None)
-            if self.connection_mode and isinstance(item, DeviceItem):
-                if self.connection_start is None:
-                    self.connection_start = item
-                    item.setBrush(QBrush(QColor('#FFD700')))
-                else:
-                    item.setBrush(QBrush(QColor(DEVICE_TYPES[item.device_type]['color'])))
-                    self.add_connection(self.connection_start, item)
-                    self.connection_start.setBrush(QBrush(QColor(DEVICE_TYPES[self.connection_start.device_type]['color'])))
-                    self.connection_start = None
-                    self.connection_mode = False
+            pos = event.scenePos()
+            item = self.itemAt(pos, QTransform())
+            if item is not None and isinstance(item, DeviceItem):
+                if self.connection_mode:
+                    try:
+                        if self.connection_start is None:
+                            self.connection_start = item
+                            item.connection_highlight = True
+                            item.update()
+                        else:
+                            item.connection_highlight = False
+                            item.update()
+                            self.add_connection(self.connection_start, item)
+                            self.connection_start.connection_highlight = False
+                            self.connection_start.update()
+                            self.connection_start = None
+                            self.connection_mode = False
+                        return
+                    except Exception as e:
+                        print(f"Connection error: {e}")
+                        self.connection_start = None
+                        self.connection_mode = False
+                        return
         super().mousePressEvent(event)
     
     def mouseMoveEvent(self, event):
         for conn in self.connections:
-            conn.update_position()
+            try:
+                if conn.start_device is not None and conn.end_device is not None:
+                    conn.update_position()
+                    conn.update()
+            except (RuntimeError, AttributeError):
+                pass
         super().mouseMoveEvent(event)
+        self.update()
     
     def generate_full_lab(self, lab_path):
         if not os.path.exists(lab_path):
             os.makedirs(lab_path)
         
         conf_lines = []
-        network_id = 0
+        
+        device_interfaces = {}
         
         processed = set()
         for conn in self.connections:
@@ -204,13 +401,26 @@ class TopologyScene(QGraphicsScene):
                 continue
             processed.add(pair)
             
-            net_letter = chr(65 + network_id)
-            conf_lines.append(f"{conn.start_device.name}[0]={net_letter}")
-            conf_lines.append(f"{conn.end_device.name}[0]={net_letter}")
-            network_id += 1
+            dev1 = conn.start_device.name
+            dev2 = conn.end_device.name
+            
+            if dev1 not in device_interfaces:
+                device_interfaces[dev1] = 0
+            if dev2 not in device_interfaces:
+                device_interfaces[dev2] = 0
+            
+            net_letter = chr(65 + len(processed) - 1)
+            eth1 = device_interfaces[dev1]
+            eth2 = device_interfaces[dev2]
+            
+            conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
+            conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
+            
+            device_interfaces[dev1] = eth1 + 1
+            device_interfaces[dev2] = eth2 + 1
         
-        with open(os.path.join(lab_path, 'lab.conf'), 'w') as f:
-            f.write('\n'.join(conf_lines))
+        with open(os.path.join(lab_path, 'lab.conf'), 'wb') as f:
+            f.write(('\r\n'.join(conf_lines) + '\r\n').encode('utf-8'))
         
         with open(os.path.join(lab_path, 'topology.txt'), 'w') as f:
             f.write("=" * 50 + "\n")
@@ -223,19 +433,23 @@ class TopologyScene(QGraphicsScene):
             f.write("\n\nDEVICE CONFIGURATION:\n")
             for name, device in self.devices.items():
                 if device.ip_address:
-                    f.write(f"\n{name}:\n  IP: {device.ip_address}/24\n")
+                    f.write(f"\n{name}:\n  Interface: {device.eth}\n  IP: {device.ip_address}/24\n")
                     if device.gateway:
                         f.write(f"  Gateway: {device.gateway}\n")
         
         for name, device in self.devices.items():
             startup_file = os.path.join(lab_path, f"{name}.startup")
-            with open(startup_file, 'w') as f:
-                if device.ip_address:
-                    f.write(f"ip addr add {device.ip_address}/24 dev eth0\n")
-                if device.gateway:
-                    f.write(f"ip route add default via {device.gateway}\n")
-                if device.device_type == 'router':
-                    f.write("sysctl -w net.ipv4.ip_forward=1\n")
+            startup_cmds = []
+            if device.ip_address:
+                startup_cmds.append(f"ip addr add {device.ip_address}/24 dev {device.eth}")
+            if device.gateway:
+                startup_cmds.append(f"ip route add default via {device.gateway}")
+            if device.device_type == 'router':
+                startup_cmds.append("sysctl -w net.ipv4.ip_forward=1")
+            
+            content = '\n'.join(startup_cmds) + '\n' if startup_cmds else '# No configuration\n'
+            with open(startup_file, 'wb') as f:
+                f.write(content.encode('utf-8'))
 
 class IPConfigDialog(QDialog):
     def __init__(self, device_name, current_ip="", current_gateway="", current_eth="eth0", parent=None):
@@ -354,6 +568,12 @@ class MainWindow(QMainWindow):
         self.config_ip_btn.setEnabled(False)
         layout.addRow("", self.config_ip_btn)
         
+        self.ping_btn = QPushButton("Ping")
+        self.ping_btn.setStyleSheet("background-color: #4A90D9; color: white; padding: 8px; border: none;")
+        self.ping_btn.clicked.connect(self.ping_device)
+        self.ping_btn.setEnabled(False)
+        layout.addRow("", self.ping_btn)
+        
         group.setLayout(layout)
         parent.addWidget(group)
         
@@ -396,8 +616,203 @@ class MainWindow(QMainWindow):
         self.console = ConsoleWidget()
         layout.addWidget(self.console)
         
+        cmd_layout = QHBoxLayout()
+        self.cmd_input = QLineEdit()
+        self.cmd_input.setPlaceholderText("add | connect | ip | ping | del | list | help")
+        self.cmd_input.setStyleSheet("background-color: #1a1a2e; color: white; padding: 5px; border: 1px solid #444;")
+        self.cmd_input.returnPressed.connect(self.execute_command)
+        
+        cmd_btn = QPushButton("RUN")
+        cmd_btn.setStyleSheet("background-color: #FF6B6B; color: white; border: none; padding: 5px 15px;")
+        cmd_btn.clicked.connect(self.execute_command)
+        
+        cmd_layout.addWidget(self.cmd_input)
+        cmd_layout.addWidget(cmd_btn)
+        layout.addLayout(cmd_layout)
+        
         group.setLayout(layout)
         parent.addWidget(group)
+        
+        self.console.log(">>> Kathara Console Ready")
+        self.console.log(">>> Commands: add, connect, ip, del, list, help")
+    
+    def execute_command(self):
+        cmd = self.cmd_input.text().strip()
+        if not cmd:
+            return
+        
+        self.console.log(f"[CMD] {cmd}", "#FFD700")
+        self.cmd_input.setText("")
+        
+        parts = cmd.lower().split()
+        if not parts:
+            return
+        
+        command = parts[0]
+        
+        try:
+            if command == "add":
+                if len(parts) < 3:
+                    self.console.log("[ERROR] Usage: add router|switch|pc|hub|cloud NAME", "#FF6B6B")
+                    return
+                device_type = parts[1]
+                name = parts[2].lower()
+                if device_type not in DEVICE_TYPES:
+                    self.console.log(f"[ERROR] Unknown device type: {device_type}", "#FF6B6B")
+                    return
+                x = 200 + (len(self.scene.devices) % 4) * 180
+                y = 150 + (len(self.scene.devices) // 4) * 150
+                device = self.scene.add_device(device_type, x, y)
+                if device:
+                    self.console.log(f"[+] Added: {device.name} ({device_type.upper()})", DEVICE_TYPES[device_type]['color'])
+                    self.refresh_connections()
+                    
+            elif command in ("connect", "conn"):
+                if len(parts) < 3:
+                    self.console.log("[ERROR] Usage: connect NAME1 NAME2 [cable]", "#FF6B6B")
+                    return
+                name1 = parts[1].lower()
+                name2 = parts[2].lower()
+                cable = parts[3] if len(parts) > 3 else "copper-straight"
+                
+                dev1 = self.scene.devices.get(name1)
+                dev2 = self.scene.devices.get(name2)
+                
+                if not dev1 or not dev2:
+                    self.console.log("[ERROR] Device not found", "#FF6B6B")
+                    return
+                
+                existing = any((c.start_device.name == name1 and c.end_device.name == name2) or 
+                              (c.start_device.name == name2 and c.end_device.name == name1) 
+                              for c in self.scene.connections)
+                if existing:
+                    self.console.log("[ERROR] Connection already exists", "#FF6B6B")
+                    return
+                
+                if cable not in CABLE_TYPES:
+                    cable = "copper-straight"
+                
+                conn = ConnectionItem(dev1, dev2, cable)
+                self.scene.addItem(conn)
+                self.scene.connections.append(conn)
+                dev1.connections.append(conn)
+                dev2.connections.append(conn)
+                self.console.log(f"[LINK] {name1} <-> {name2} ({cable})", "#00FFFF")
+                self.refresh_connections()
+                
+            elif command == "ip":
+                if len(parts) < 4:
+                    self.console.log("[ERROR] Usage: ip NAME ETH IP [gateway]", "#FF6B6B")
+                    return
+                name = parts[1].lower()
+                eth = parts[2]
+                ip = parts[3]
+                gateway = parts[4] if len(parts) > 4 else ""
+                
+                device = self.scene.devices.get(name)
+                if not device:
+                    self.console.log("[ERROR] Device not found", "#FF6B6B")
+                    return
+                
+                if device.device_type in ['hub', 'switch']:
+                    self.console.log(f"[ERROR] {device.device_type.upper()} cannot have IP", "#FF6B6B")
+                    return
+                
+                if eth not in ['eth0', 'eth1', 'eth2', 'eth3']:
+                    self.console.log("[ERROR] Invalid interface. Use eth0-eth3", "#FF6B6B")
+                    return
+                
+                device.set_ip(eth, ip, gateway)
+                self.on_selection_changed()
+                self.console.log(f"[IP] {name} {eth}:{ip}" + (f" gateway:{gateway}" if gateway else ""), "#FFFF00")
+                
+            elif command in ("del", "delete"):
+                if len(parts) < 2:
+                    self.console.log("[ERROR] Usage: del NAME", "#FF6B6B")
+                    return
+                name = parts[1].lower()
+                if name in self.scene.devices:
+                    self.scene.remove_device(name)
+                    self.refresh_connections()
+                    self.console.log(f"[-] Deleted: {name}", "#D0021B")
+                else:
+                    self.console.log("[ERROR] Device not found", "#FF6B6B")
+                    
+            elif command == "list":
+                if not self.scene.devices:
+                    self.console.log("[INFO] No devices", "#888")
+                    return
+                self.console.log(f"[INFO] Devices ({len(self.scene.devices)}):", "#888")
+                for d in self.scene.devices.values():
+                    ip_info = f" {d.eth}:{d.ip}" if d.ip else " (no IP)"
+                    self.console.log(f"  - {d.name} ({d.device_type}){ip_info}", "#888")
+                self.console.log(f"[INFO] Connections ({len(self.scene.connections)}):", "#888")
+                for c in self.scene.connections:
+                    self.console.log(f"  - {c.start_device.name} <-> {c.end_device.name}", "#888")
+            
+            elif command == "ping":
+                if len(parts) < 2:
+                    self.console.log("[ERROR] Usage: ping NAME [target_ip]", "#FF6B6B")
+                    return
+                name = parts[1].lower()
+                target_ip = parts[2] if len(parts) > 2 else "8.8.8.8"
+                
+                device = self.scene.devices.get(name)
+                if not device:
+                    self.console.log("[ERROR] Device not found", "#FF6B6B")
+                    return
+                
+                if not device.ip_address:
+                    self.console.log(f"[PING] {name} has no IP address", "#FF6B6B")
+                    return
+                
+                if not self.current_lab_path:
+                    self.console.log("[ERROR] Please export a lab first!", "#FF6B6B")
+                    return
+                
+                self.console.log(f"[PING] {name} -> {target_ip}...", "#00BFFF")
+                self.console.log("[INFO] Starting lab and waiting...", "#F5A623")
+                
+                def run_ping():
+                    import time
+                    try:
+                        subprocess.run(["kathara", "lstart", "-d", self.current_lab_path], 
+                                     capture_output=True, timeout=60)
+                        time.sleep(10)
+                        
+                        result = subprocess.run(
+                            ["kathara", "exec", "-d", self.current_lab_path, name, "--", "ping", "-c", "4", target_ip],
+                            capture_output=True, text=True, timeout=30
+                        )
+                        output = result.stdout + result.stderr
+                        
+                        self.console.log("[OK] Lab started!", "#7ED321")
+                        self.console.log(f"[PING] Result:", "#7ED321")
+                        for line in output.split('\n')[:10]:
+                            if line.strip():
+                                self.console.log(f"  {line}", "#888")
+                                
+                    except subprocess.TimeoutExpired:
+                        self.console.log("[PING] Timeout", "#FF6B6B")
+                    except Exception as e:
+                        self.console.log(f"[PING] Error: {str(e)}", "#FF6B6B")
+                
+                threading.Thread(target=run_ping, daemon=True).start()
+                    
+            elif command == "help":
+                self.console.log("[HELP] Available commands:", "#00FFFF")
+                self.console.log("  add router|switch|pc|hub|cloud NAME", "#888")
+                self.console.log("  connect NAME1 NAME2 [cable]", "#888")
+                self.console.log("  ip NAME eth0|eth1 IP [gateway]", "#888")
+                self.console.log("  ping NAME [target_ip]", "#888")
+                self.console.log("  del NAME", "#888")
+                self.console.log("  list", "#888")
+                self.console.log("  help", "#888")
+                
+            else:
+                self.console.log(f"[ERROR] Unknown command: {command}", "#FF6B6B")
+        except Exception as e:
+            self.console.log(f"[ERROR] {str(e)}", "#FF6B6B")
         
     def setup_menu(self):
         menubar = self.menuBar()
@@ -505,6 +920,51 @@ class MainWindow(QMainWindow):
                 if ip:
                     self.console.log(f"[IP] {device.name}: {ip}")
     
+    def ping_device(self):
+        items = self.canvas.scene().selectedItems()
+        if items and isinstance(items[0], DeviceItem):
+            device = items[0]
+            if not device.ip_address:
+                self.console.log("[PING] Device has no IP address", "#FF6B6B")
+                return
+            
+            target_ip, ok = QInputDialog.getText(self, "Ping", f"Ping from {device.name} to:", text="8.8.8.8")
+            if not ok or not target_ip:
+                return
+            
+            if not self.current_lab_path:
+                QMessageBox.warning(self, "Warning", "Please export a lab first!")
+                return
+            
+            self.console.log(f"[PING] {device.name} -> {target_ip}...", "#00BFFF")
+            self.console.log("[INFO] Starting lab and waiting...", "#F5A623")
+            
+            def run_ping():
+                import time
+                try:
+                    subprocess.run(["kathara", "lstart", "-d", self.current_lab_path], 
+                                 capture_output=True, timeout=60)
+                    time.sleep(10)
+                    
+                    result = subprocess.run(
+                        ["kathara", "exec", "-d", self.current_lab_path, device.name, "--", "ping", "-c", "4", target_ip],
+                        capture_output=True, text=True, timeout=30
+                    )
+                    output = result.stdout + result.stderr
+                    
+                    self.console.log("[OK] Lab started!", "#7ED321")
+                    self.console.log(f"[PING] Result:", "#7ED321")
+                    for line in output.split('\n')[:10]:
+                        if line.strip():
+                            self.console.log(f"  {line}", "#888")
+                            
+                except subprocess.TimeoutExpired:
+                    self.console.log("[PING] Timeout", "#FF6B6B")
+                except Exception as e:
+                    self.console.log(f"[PING] Error: {str(e)}", "#FF6B6B")
+            
+            threading.Thread(target=run_ping, daemon=True).start()
+    
     def on_device_added(self, device_type, name, x, y):
         pass
     
@@ -527,11 +987,13 @@ class MainWindow(QMainWindow):
                 self.ip_label.setText(device.ip_address if device.ip_address else "-")
                 self.gateway_label.setText(device.gateway if device.gateway else "-")
                 self.config_ip_btn.setEnabled(True)
+                self.ping_btn.setEnabled(bool(device.ip_address))
             else:
                 self.eth_label.setText("-")
                 self.ip_label.setText("-")
                 self.gateway_label.setText("-")
                 self.config_ip_btn.setEnabled(False)
+                self.ping_btn.setEnabled(False)
         else:
             self.name_label.setText("-")
             self.type_label.setText("-")
@@ -539,6 +1001,7 @@ class MainWindow(QMainWindow):
             self.ip_label.setText("-")
             self.gateway_label.setText("-")
             self.config_ip_btn.setEnabled(False)
+            self.ping_btn.setEnabled(False)
     
     def on_cable_changed(self):
         self.scene.selected_cable_type = self.cable_combo.currentData()
