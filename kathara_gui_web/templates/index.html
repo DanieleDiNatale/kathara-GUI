@@ -85,28 +85,6 @@
                     <button class="btn primary" id="exportBtn">EXPORT</button>
                     <button class="btn secondary" id="listBtn">LIST DEVICES</button>
                 </div>
-                
-                <div class="panel">
-                    <h3>CONNECT TO DEVICE</h3>
-                    <select id="deviceSelect">
-                        <option value="">Select device...</option>
-                    </select>
-                    <button class="btn secondary" id="connectBtn">CONNECT</button>
-                </div>
-
-                <div class="panel">
-                    <h3>CONSOLE COMMANDS</h3>
-                    <input type="text" id="commandInput" placeholder="add router R1">
-                    <button class="btn command" id="runCmdBtn">RUN</button>
-                    <div class="command-help">
-                        <small>Commands:<br>
-                        add router|switch|pc|hub|cloud NAME<br>
-                        connect NAME1 NAME2 [cable]<br>
-                        ip NAME ETH IP [gateway]<br>
-                        del NAME<br>
-                        list</small>
-                    </div>
-                </div>
             </aside>
 
             <main class="canvas-container">
@@ -122,6 +100,10 @@
                 <div class="panel console-panel">
                     <h3>CONSOLE</h3>
                     <div id="console" class="console"></div>
+                    <div class="command-input-container">
+                        <input type="text" id="commandInput" placeholder="add | connect | ip | ping | del | list | help">
+                        <button class="btn command" id="runCmdBtn">RUN</button>
+                    </div>
                 </div>
             </aside>
         </div>

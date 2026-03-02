@@ -549,6 +549,7 @@ document.getElementById('cableType').addEventListener('change', (e) => {
 
 function updateDeviceSelect() {
     const select = document.getElementById('deviceSelect');
+    if (!select) return;
     select.innerHTML = '<option value="">Select device...</option>';
     devices.forEach(d => {
         const option = document.createElement('option');
@@ -666,15 +667,15 @@ function openIPDialog(device) {
     const eth = prompt(`Configure ${device.name}:\nSelect interface (${ethOptions.join(', ')}):`, selectedEth);
     if (eth !== null && ethOptions.includes(eth)) {
         device.eth = eth;
-        const ip = prompt(`Enter IP address for ${device.name} (e.g., 192.168.1.10):`, device.ip || '');
-        if (ip !== null) {
-            device.ip = ip;
-            const gw = prompt(`Enter Gateway for ${device.name} (optional):`, device.gateway || '');
+        const ip = prompt(`Enter IP address for ${device.name}:`, device.ip || '');
+        if (ip !== null && ip.trim() !== '') {
+            device.ip = ip.trim();
+            const gw = prompt(`Enter Gateway (optional):`, device.gateway || '');
             if (gw !== null) {
-                device.gateway = gw;
+                device.gateway = gw.trim();
             }
             updatePropertiesPanel();
-            log(`[IP] ${device.name} ${eth}:${ip}` + (gw ? ` gateway: ${gw}` : ''), '#FFFF00');
+            log(`[IP] ${device.name} ${eth}:${device.ip}` + (device.gateway ? ` gateway: ${device.gateway}` : ''), '#FFFF00');
             draw();
         }
     } else if (eth !== null) {
@@ -697,6 +698,7 @@ document.getElementById('pingBtn').addEventListener('click', () => {
                 return;
             }
             log(`[PING] ${selectedDevice.name} ping ${targetIP} via ${selectedDevice.eth || 'eth0'}...`, '#00FFFF');
+            log(`[INFO] Starting lab and waiting...`, '#F5A623');
             fetch('/api/ping', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -704,7 +706,9 @@ document.getElementById('pingBtn').addEventListener('click', () => {
                     device_name: selectedDevice.name, 
                     target_ip: targetIP, 
                     eth: selectedDevice.eth || 'eth0',
-                    lab_path: currentLabPath 
+                    lab_path: currentLabPath,
+                    devices: devices,
+                    connections: connections
                 })
             })
             .then(res => {
@@ -715,7 +719,10 @@ document.getElementById('pingBtn').addEventListener('click', () => {
             })
             .then(data => {
                 if (data.success) {
-                    log(`[PING] ${data.result}`, data.success ? '#7ED321' : '#FF6B6B');
+                    log(`[OK] Lab started!`, '#7ED321');
+                    log(`[PING] Result:`, '#7ED321');
+                    const lines = data.result.split('\n').slice(0, 10);
+                    lines.forEach(line => log(`  ${line}`, '#888'));
                 } else {
                     log(`[PING] Error: ${data.message}`, '#FF6B6B');
                 }
@@ -803,19 +810,6 @@ document.getElementById('listBtn').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('connectBtn').addEventListener('click', async () => {
-    const deviceName = document.getElementById('deviceSelect').value;
-    if (!deviceName || !currentLabPath) {
-        log('[WARN] Select a device and start the lab first', '#F5A623');
-        return;
-    }
-    const result = await apiCall('/api/connect', { 
-        lab_path: currentLabPath, 
-        device_name: deviceName 
-    });
-    log(result.message || result.error, result.success ? '#9013FE' : '#ff0000');
-});
-
 document.getElementById('runCmdBtn').addEventListener('click', executeCommand);
 document.getElementById('commandInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') executeCommand();
@@ -843,6 +837,9 @@ function executeCommand() {
                 break;
             case 'ip':
                 handleIPCommand(parts);
+                break;
+            case 'ping':
+                handlePingCommand(parts);
                 break;
             case 'del':
             case 'delete':
@@ -982,6 +979,62 @@ function handleIPCommand(parts) {
     log(`[IP] ${name} ${eth}:${ip}` + (gateway ? ` gateway:${gateway}` : ''), '#FFFF00');
 }
 
+async function handlePingCommand(parts) {
+    if (parts.length < 2) {
+        log('[ERROR] Usage: ping NAME [target_ip]', '#FF6B6B');
+        return;
+    }
+    
+    const name = parts[1].toUpperCase();
+    const targetIP = parts[2] || '8.8.8.8';
+    
+    const device = devices.find(d => d.name === name);
+    if (!device) {
+        log(`[ERROR] Device ${name} not found`, '#FF6B6B');
+        return;
+    }
+    
+    if (!device.ip) {
+        log(`[PING] ${name} has no IP address`, '#FF6B6B');
+        return;
+    }
+    
+    if (!currentLabPath) {
+        log('[WARN] Please export/start the lab first', '#F5A623');
+        return;
+    }
+    
+    log(`[PING] ${name} -> ${targetIP}...`, '#00FFFF');
+    log(`[INFO] Starting lab and waiting...`, '#F5A623');
+    
+    try {
+        const response = await fetch('/api/ping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                lab_path: currentLabPath,
+                device_name: name,
+                target_ip: targetIP,
+                eth: device.eth || 'eth0',
+                devices: devices,
+                connections: connections
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            log(`[OK] Lab started!`, '#7ED321');
+            log(`[PING] Result:`, '#7ED321');
+            const lines = result.result.split('\n').slice(0, 10);
+            lines.forEach(line => log(`  ${line}`, '#888'));
+        } else {
+            log(`[PING] Error: ${result.message}`, '#FF6B6B');
+        }
+    } catch (err) {
+        log(`[PING] Error: ${err.message}`, '#FF6B6B');
+    }
+}
+
 function handleDeleteCommand(parts) {
     if (parts.length < 2) {
         log('[ERROR] Usage: del NAME', '#FF6B6B');
@@ -1033,6 +1086,7 @@ function showCommandHelp() {
     log('  add router|switch|pc|hub|cloud NAME  - Add device', '#888');
     log('  connect NAME1 NAME2 [cable]          - Connect devices', '#888');
     log('  ip NAME eth0|eth1 IP [gateway]       - Set IP address', '#888');
+    log('  ping NAME [target_ip]                - Ping from device', '#888');
     log('  del NAME                              - Delete device', '#888');
     log('  list                                  - Show topology', '#888');
     log('  help                                  - Show this help', '#888');
