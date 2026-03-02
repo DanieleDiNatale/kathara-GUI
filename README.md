@@ -23,6 +23,9 @@ GUI per Kathará Network Emulator in stile Cisco Packet Tracer.
 
 # 🌐 GUIDA WEB GUI
 
+<img width="1917" height="908" alt="WEB GUI " src="https://github.com/user-attachments/assets/f88acec8-3a51-49ba-8bbb-9bb6ddabcc5b" />
+
+
 ## 🚀 Avvio
 
 ```bash
@@ -101,6 +104,9 @@ del pc1
 ---
 
 # 🖥️ GUIDA DESKTOP GUI
+
+<img width="1918" height="998" alt="Desktop GUI " src="https://github.com/user-attachments/assets/ce7c41b5-e5f6-4e0d-9557-8871e1aaf20c" />
+
 
 ## 🚀 Avvio
 
