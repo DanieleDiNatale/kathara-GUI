@@ -57,59 +57,31 @@ class DeviceItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         
-        self.label = QGraphicsTextItem(self)
-        self.label.setPlainText(DEVICE_TYPES[device_type]['label'])
-        self.label.setDefaultTextColor(QColor('white'))
-        self.label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-        self.label.setTextWidth(DEVICE_WIDTH)
-        self.label.setPos((DEVICE_WIDTH - self.label.textWidth()) / 2, -18)
-        self.label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
-        self.label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
-        
-        self.name_label = QGraphicsTextItem(self)
-        self.name_label.setPlainText(name)
-        self.name_label.setDefaultTextColor(QColor('white'))
-        self.name_label.setFont(QFont("Arial", 9))
-        self.name_label.setTextWidth(DEVICE_WIDTH)
-        self.name_label.setPos((DEVICE_WIDTH - self.name_label.textWidth()) / 2, DEVICE_HEIGHT + 4)
-        self.name_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
-        self.name_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
-        
-        self.ip_label = QGraphicsTextItem(self)
-        self.ip_label.setPlainText("")
-        self.ip_label.setDefaultTextColor(QColor('#FFFF00'))
-        self.ip_label.setFont(QFont("Arial", 8))
-        self.ip_label.setTextWidth(DEVICE_WIDTH)
-        self.ip_label.setPos((DEVICE_WIDTH - self.ip_label.textWidth()) / 2, DEVICE_HEIGHT + 16)
-        self.ip_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
-        self.ip_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
-        
         self.connections = []
         self.connection_highlight = False
     
     def boundingRect(self):
-        return QRectF(0, -20, DEVICE_WIDTH, DEVICE_HEIGHT + 40)
+        return QRectF(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT)
     
     def paint(self, painter, option, widget=None):
         color = DEVICE_TYPES[self.device_type]['color']
         is_selected = self.isSelected() or self.connection_highlight
         
-        offset_y = -20
-        h_offset = DEVICE_HEIGHT + 20
+        x, y, w, h = 0, 0, DEVICE_WIDTH, DEVICE_HEIGHT
         
         if self.device_type == 'pc':
-            self._draw_pc(painter, color, is_selected, offset_y)
+            self._draw_pc(painter, color, is_selected)
         elif self.device_type == 'router':
-            self._draw_router(painter, color, is_selected, offset_y)
+            self._draw_router(painter, color, is_selected)
         elif self.device_type == 'switch':
-            self._draw_switch(painter, color, is_selected, offset_y)
+            self._draw_switch(painter, color, is_selected)
         elif self.device_type == 'hub':
-            self._draw_hub(painter, color, is_selected, offset_y)
+            self._draw_hub(painter, color, is_selected)
         elif self.device_type == 'cloud':
-            self._draw_cloud(painter, color, is_selected, offset_y)
+            self._draw_cloud(painter, color, is_selected)
     
-    def _draw_pc(self, painter, color, is_selected, offset_y=0):
-        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+    def _draw_pc(self, painter, color, is_selected):
+        x, y, w, h = 0, 0, DEVICE_WIDTH, DEVICE_HEIGHT
         
         painter.setBrush(QBrush(QColor(color)))
         painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
@@ -132,8 +104,8 @@ class DeviceItem(QGraphicsRectItem):
         painter.drawLine(x + 50, y + 56, x + 50, y + 62)
         painter.drawLine(x + 50, y + 62, x + 60, y + 62)
     
-    def _draw_router(self, painter, color, is_selected, offset_y=0):
-        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+    def _draw_router(self, painter, color, is_selected):
+        x, y, w, h = 0, 0, DEVICE_WIDTH, DEVICE_HEIGHT
         cx, cy = x + w/2, y + h/2
         
         painter.setBrush(QBrush(QColor('#333333')))
@@ -155,8 +127,8 @@ class DeviceItem(QGraphicsRectItem):
         painter.drawArc(int(cx) - 10, int(y + 5) - 10, 20, 20, 0, 180 * 16)
         painter.drawArc(int(cx) - 14, int(y) - 14, 28, 28, 0, 180 * 16)
     
-    def _draw_switch(self, painter, color, is_selected, offset_y=0):
-        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+    def _draw_switch(self, painter, color, is_selected):
+        x, y, w, h = 0, 0, DEVICE_WIDTH, DEVICE_HEIGHT
         
         painter.setBrush(QBrush(QColor(color)))
         painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
@@ -176,8 +148,8 @@ class DeviceItem(QGraphicsRectItem):
         painter.setBrush(QBrush(QColor('#333')))
         painter.drawRect(x + 60, y + 22, 10, 6)
     
-    def _draw_hub(self, painter, color, is_selected, offset_y=0):
-        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+    def _draw_hub(self, painter, color, is_selected):
+        x, y, w, h = 0, 0, DEVICE_WIDTH, DEVICE_HEIGHT
         cx, cy = x + w/2, y + h/2
         
         painter.setBrush(QBrush(QColor(color)))
@@ -193,47 +165,29 @@ class DeviceItem(QGraphicsRectItem):
             ey = cy + math.sin(angle) * 36
             painter.drawLine(int(sx), int(sy), int(ex), int(ey))
     
-    def _draw_cloud(self, painter, color, is_selected, offset_y=0):
-        x, y, w, h = 0, offset_y, DEVICE_WIDTH, DEVICE_HEIGHT
+    def _draw_cloud(self, painter, color, is_selected):
+        x, y, w, h = 0, 0, DEVICE_WIDTH, DEVICE_HEIGHT
         cx, cy = x + w/2, y + h/2
         
         painter.setBrush(QBrush(QColor(color)))
         painter.setPen(QPen(QColor(color) if not is_selected else QColor('#FFD700'), 3 if is_selected else 0))
         
         path = QPainterPath()
-        path.moveTo(x + 20, cy + 12)
         
-        rect1 = QRectF(x + 8, cy - 12, 24, 24)
-        path.arcMoveTo(rect1, 180)
-        path.arcTo(rect1, 180, 180)
+        path.moveTo(x + 15, cy + 8)
         
-        rect2 = QRectF(x + 21, cy - 8, 28, 28)
-        path.arcTo(rect2, 180, 180)
+        path.cubicTo(x + 5, cy + 8, x + 5, cy - 15, x + 20, cy - 15)
+        path.cubicTo(x + 20, cy - 25, x + 35, cy - 25, x + 40, cy - 15)
+        path.cubicTo(x + 55, cy - 20, x + 65, cy - 10, x + 65, cy + 5)
+        path.cubicTo(x + 75, cy + 15, x + 60, cy + 15, x + 50, cy + 10)
+        path.cubicTo(x + 45, cy + 20, x + 25, cy + 20, x + 15, cy + 8)
         
-        rect3 = QRectF(x + 36, cy - 6, 28, 28)
-        path.arcTo(rect3, 180, 180)
-        
-        rect4 = QRectF(x + 50, cy, 20, 20)
-        path.arcTo(rect4, 180, 180)
-        
-        rect5 = QRectF(x + 40, cy + 8, 20, 20)
-        path.arcTo(rect5, 0, 180)
-        
-        rect6 = QRectF(x + 20, cy + 8, 20, 20)
-        path.arcTo(rect6, 0, 180)
-        
-        path.closeSubpath()
         painter.drawPath(path)
     
     def set_ip(self, eth, ip, gateway=""):
         self.eth = eth
         self.ip_address = ip
         self.gateway = gateway
-        if ip:
-            self.ip_label.setPlainText(f"{eth}:{ip}")
-            self.ip_label.setPos((DEVICE_WIDTH - self.ip_label.textWidth()) / 2, DEVICE_HEIGHT + 24)
-        else:
-            self.ip_label.setPlainText("")
 
 class ConnectionItem(QGraphicsPathItem):
     def __init__(self, start_device, end_device, cable_type='copper-straight'):
