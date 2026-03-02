@@ -237,13 +237,6 @@ class ConnectionItem(QGraphicsPathItem):
         painter.setBrush(QBrush(color))
         
         painter.drawPath(self.path())
-        
-        start = self.start_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
-        end = self.end_device.scenePos() + QPointF(DEVICE_WIDTH/2, DEVICE_HEIGHT/2)
-        
-        painter.setBrush(QBrush(color))
-        painter.drawEllipse(int(start.x()) - 7, int(start.y()) - 7, 14, 14)
-        painter.drawEllipse(int(end.x()) - 7, int(end.y()) - 7, 14, 14)
 
 class TopologyScene(QGraphicsScene):
     device_added = pyqtSignal(str, str, float, float)
