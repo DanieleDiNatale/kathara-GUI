@@ -12,7 +12,7 @@ try:
                              QLabel, QPushButton, QToolBar, QStatusBar, QListWidget, QLineEdit,
                              QTextEdit, QFileDialog, QMessageBox, QGroupBox, QFormLayout,
                              QDialog, QDialogButtonBox, QComboBox, QInputDialog)
-    from PyQt6.QtCore import Qt, QPointF, pyqtSignal, QRectF
+    from PyQt6.QtCore import Qt, QPointF, pyqtSignal, QRectF, QTimer
     from PyQt6.QtGui import (QColor, QPen, QBrush, QAction, QPainter, QFont, 
                            QPainterPath, QPixmap, QTransform)
     print("All imports OK")
@@ -298,9 +298,11 @@ class TopologyScene(QGraphicsScene):
         
         self.setBackgroundBrush(QColor('#1a1a2e'))
         
-        for i in range(-20, 20):
-            self.addLine(i * 50, -1000, i * 50, 1000, QPen(QColor('#2a2a4e'), 1))
-            self.addLine(-1000, i * 50, 1000, i * 50, QPen(QColor('#2a2a4e'), 1))
+        self.setSceneRect(-600, -400, 1200, 800)
+        
+        for i in range(-12, 12):
+            self.addLine(i * 50, -400, i * 50, 400, QPen(QColor('#2a2a4e'), 1))
+            self.addLine(-600, i * 50, 600, i * 50, QPen(QColor('#2a2a4e'), 1))
     
     def add_device(self, device_type, x, y):
         self.device_counter[device_type] += 1
@@ -509,12 +511,24 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Kathara Network Designer")
         self.setGeometry(50, 50, 1500, 900)
+        self.setMinimumSize(1000, 700)
         
         self.current_lab_path = None
         
         self.setup_ui()
         self.setup_menu()
         self.setup_toolbar()
+        
+        QTimer.singleShot(100, self.fit_canvas)
+    
+    def fit_canvas(self):
+        if hasattr(self, 'canvas') and self.canvas:
+            self.canvas.fitInView(self.canvas.scene().sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+    
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, 'canvas'):
+            self.fit_canvas()
         
     def setup_ui(self):
         central_widget = QWidget()
@@ -530,6 +544,11 @@ class MainWindow(QMainWindow):
         self.canvas = QGraphicsView(self.scene)
         self.canvas.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.canvas.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.canvas.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.canvas.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.canvas.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.canvas.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.canvas.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
         
         main_layout.addWidget(self.canvas, 4)
         
