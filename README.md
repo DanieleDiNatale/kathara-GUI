@@ -13,120 +13,400 @@ GUI per Kathará Network Emulator in stile Cisco Packet Tracer.
 
 - **Dispositivi di rete**: Router, Switch, PC, Hub, Cloud
 - **Connessioni visive**: Cavi colorati con diversi tipi (Copper Straight, Copper Cross, Fiber, Serial, Phone, Coaxial)
-- **Configurazione IP**: Interface grafica per impostare indirizzi IP, gateway e interfaccia di rete (eth0-eth3)
+- **Configurazione IP**: Interfaccia grafica per impostare indirizzi IP, gateway e interfaccia di rete (eth0-eth3)
 - **Ping**: Esegui ping direttamente dalla GUI per testare la connettività
 - **Esportazione**: Genera automaticamente file `lab.conf` e `*.startup` per Kathara
 - **Gestione Lab**: Avvia, ferma e connettiti ai container
 - **Console**: Messaggi di log in tempo reale
 
-### GUI WEB
+---
 
-<img width="1917" height="908" alt="WEB GUI " src="https://github.com/user-attachments/assets/efb965ad-675b-49f6-8028-5797297cd1f4" />
+# 🌐 GUIDA WEB GUI
 
-### GUI DESKTOP
-
-
-working in progress......
-
-
-## 🚀 Installazione
-
-### Prerequisiti
-
-- **Python 3.8+**
-- **Docker Desktop** installato e avviato
-- **Kathara** installato
-
-### 1. Installa le dipendenze
+## 🚀 Avvio
 
 ```bash
-# Clona il repository
-git clone https://github.com/YOUR_USERNAME/kathara-network-designer.git
-cd kathara-network-designer
-
-# Installa dipendenze per GUI Desktop
-pip install PyQt6
-
-# Installa dipendenze per GUI Web
-pip install flask
-
-# Installa Kathara (se non già installato)
-pip install kathara
+cd kathara_gui_web
+python app.py
 ```
 
-### 2. Avvio rapido
+Apri **http://127.0.0.1:5000** nel browser.
 
-#### GUI Desktop
+## 🎮 Controlli Mouse
+
+- **Click sinistro**: Seleziona dispositivo
+- **Click sinistro + trascina**: Sposta dispositivo
+- **Click destro**: Menu contestuale (configura IP, elimina)
+
+## ⌨️ Console Commands
+
+Digita i comandi nella console in basso:
+
+### Comandi Base
+
+| Comando | Descrizione |
+|---------|-------------|
+| `add router [nome]` | Aggiungi un router |
+| `add switch [nome]` | Aggiungi uno switch |
+| `add pc [nome]` | Aggiungi un PC |
+| `add hub [nome]` | Aggiungi un hub |
+| `add cloud [nome]` | Aggiungi una cloud |
+| `connect NOME1 NOME2` | Collega due dispositivi |
+| `ip NOME ETH IP [GATEWAY]` | Configura IP |
+| `ping NOME [target]` | Ping da dispositivo |
+| `del NOME` | Elimina dispositivo |
+| `list` | Mostra topologia |
+
+### Esempi Console
+
+```
+# Creare due PC collegati
+add pc pc1
+add pc pc2
+connect pc1 pc2
+ip pc1 eth0 192.168.1.10
+ip pc2 eth0 192.168.1.20
+ping pc1 192.168.1.20
+
+# Creare rete con router
+add pc pc1
+add router router1
+add pc pc2
+connect pc1 router1
+connect router1 pc2
+ip pc1 eth0 10.0.0.10 gateway 10.0.0.254
+ip pc2 eth0 192.168.1.10 gateway 192.168.1.254
+ping pc1 192.168.1.10
+
+# Eliminare dispositivo
+del pc1
+```
+
+## 🔧 Pulsanti Interfaccia
+
+- **ADD**: Aggiungi dispositivo selezionato
+- **CONNECT**: Modalità connessione (click due dispositivi)
+- **DELETE**: Elimina dispositivo selezionato
+- **EXPORT**: Esporta lab in formato Kathara
+- **LIST DEVICES**: Mostra dispositivi attivi
+- **PING**: Ping da dispositivo selezionato
+
+## 📡 Configurazione IP
+
+1. Click destro su dispositivo → **Set IP**
+2. Seleziona interfaccia (eth0, eth1, eth2, eth3)
+3. Inserisci IP (es. 192.168.1.10)
+4. Inserisci Gateway (opzionale, es. 192.168.1.254)
+
+---
+
+# 🖥️ GUIDA DESKTOP GUI
+
+## 🚀 Avvio
+
 ```bash
 cd kathara_gui
 python main.py
 ```
 
-#### GUI Web
-```bash
-cd kathara_gui_web
-python app.py
-```
-Poi apri **http://127.0.0.1:5000** nel browser
+## 🎮 Controlli Mouse
 
-## 📖 Guida all'Uso
+- **Click sinistro**: Seleziona dispositivo
+- **Click sinistro + trascina**: Sposta dispositivo
+- **Doppio click**: Configura IP
+- **Tasto DELETE**: Elimina dispositivo selezionato
 
-### Creare una Rete
+## 🎛️ Toolbar
 
-1. **Aggiungi dispositivi**: Clicca i pulsanti ROUTER, SWITCH, PC, HUB, CLOUD nella toolbar
-2. **Posiziona**: Trascina i dispositivi sul canvas
-3. **Connetti**: 
-   - Seleziona il tipo di cavo dal menu a tendina
-   - Clicca "CONNECT" 
-   - Clicca su due dispositivi per collegarli
-4. **Configura IP**: 
-   - Seleziona un dispositivo
-   - Clicca "SET IP" (o doppio click sul dispositivo)
-   - Seleziona l'interfaccia di rete (eth0-eth1-eth2-eth3)
-   - Inserisci IP e Gateway
+### Dispositivi
+- **ROUTER**: Aggiungi router
+- **SWITCH**: Aggiungi switch
+- **PC**: Aggiungi PC
+- **HUB**: Aggiungi hub
+- **CLOUD**: Aggiungi cloud
 
-### Testare la Connettività (Ping)
+### Connessioni
+- **Cable Type**: Seleziona tipo cavo
+- **CONNECT**: Modalità connessione
 
-1. Seleziona un dispositivo con IP configurato
-2. Clicca "PING" 
-3. Inserisci l'IP da pingare (es. gateway o altro host)
-4. Visualizza il risultato nella console
+### Azioni
+- **NEW**: Nuovo lab
+- **OPEN**: Apri lab esistente
+- **EXPORT**: Esporta configurazione
+- **START**: Avvia lab
+- **STOP**: Ferma lab
+- **DELETE**: Elimina dispositivo
 
-### Esportare il Lab
+### Configurazione IP
+- **SET IP**: Configura IP dispositivo selezionato
+- **PING**: Test ping
 
-1. Clicca "EXPORT" per generare i file di configurazione
-2. Scegli la cartella di destinazione
-3. Vengono creati:
-   - `lab.conf` - Topologia della rete
-   - `*.startup` - Configurazione per ogni dispositivo
-   - `topology.txt` - Riepilogo
+---
 
-### Avviare il Lab
+# 🏠 ESEMPI RETI
 
-1. Clicca "START" per avviare i container Kathara
-2. Usa "LIST DEVICES" per vedere i container attivi
-3. Clicca "CONNECT" per collegarti a un dispositivo
-
-## 📁 Struttura del Progetto
+## 1. Due PC nella stessa rete (LAN)
 
 ```
-kathara-network-designer/
-├── kathara_gui/           # GUI Desktop (PyQt6)
-│   ├── main.py           # Codice principale
-│   ├── GUIDA_GUI.md      # Guida in italiano
-│   └── README.md         # Documentazione
-│
-├── kathara_gui_web/      # GUI Web (Flask)
-│   ├── app.py           # Server Flask
-│   ├── templates/       # Template HTML
-│   ├── static/          # CSS e JavaScript
-│   └── labs/            # Lab esportati
-│
-├── GUIDA_PASSO_PASSO.md   # Guida completa Kathara
-└── README.md             # Questo file
+    [PC1] -------- [PC2]
+   192.168.1.10   192.168.1.20
 ```
 
-## 🔌 Tipi di Cavi Disponibili
+### Configurazione Web GUI
+```
+add pc pc1
+add pc pc2
+connect pc1 pc2
+ip pc1 eth0 192.168.1.10
+ip pc2 eth0 192.168.1.20
+```
+
+### Configurazione Desktop GUI
+1. Click **PC** → Click sul canvas → PC1
+2. Click **PC** → Click sul canvas → PC2
+3. Click **CONNECT**
+4. Click PC1, poi PC2
+5. Seleziona PC1 → Click **SET IP** → eth0, 192.168.1.10
+6. Seleziona PC2 → Click **SET IP** → eth0, 192.20
+7.168.1. Click **EXPORT** → Click **START**
+
+### Test
+```
+ping pc1 192.168.1.20
+```
+
+---
+
+## 2. Rete con Router (WAN)
+
+```
+    [PC1] -------- [ROUTER] -------- [PC2]
+   10.0.0.10      eth0:10.0.0.254   192.168.1.10
+                  eth1:192.168.1.254
+```
+
+### Configurazione Web GUI
+```
+add pc pc1
+add router router1
+add pc pc2
+connect pc1 router1
+connect router1 pc2
+ip pc1 eth0 10.0.0.10 gateway 10.0.0.254
+ip pc2 eth0 192.168.1.10 gateway 192.168.1.254
+```
+
+### Configurazione Desktop GUI
+1. Click **PC** → PC1
+2. Click **ROUTER** → ROUTER1  
+3. Click **PC** → PC2
+4. Click **CONNECT** → PC1 → ROUTER1
+5. Click **CONNECT** → ROUTER1 → PC2
+6. PC1: Set IP → eth0, 10.0.0.10, gateway 10.0.0.254
+7. PC2: Set IP → eth0, 192.168.1.10, gateway 192.168.1.254
+
+### Note Importanti
+- Il router assegna automaticamente IP alle sue interfacce:
+  - eth0: 10.0.0.254
+  - eth1: 192.168.1.254
+  - eth2: 192.168.2.254
+  - ecc.
+- Il router abilita automaticamente IP forwarding
+
+### Test
+```
+ping pc1 192.168.1.10
+```
+
+---
+
+## 3. Rete con Switch
+
+```
+    [PC1]                      [PC3]
+      |                          |
+   [SWITCH1] ---------------- [PC2]
+```
+
+### Configurazione Web GUI
+```
+add pc pc1
+add pc pc2
+add pc pc3
+add switch switch1
+connect pc1 switch1
+connect pc2 switch1
+connect pc3 switch1
+ip pc1 eth0 192.168.1.10
+ip pc2 eth0 192.168.1.20
+ip pc3 eth0 192.168.1.30
+```
+
+### Configurazione Desktop GUI
+1. Aggiungi 3 PC
+2. Aggiungi 1 SWITCH
+3. Connetti tutti i PC allo Switch
+4. Configura IP: 192.168.1.10, .20, .30
+
+### Test
+```
+ping pc1 192.168.1.20
+ping pc1 192.168.1.30
+```
+
+---
+
+## 4. Rete Complessa con Cloud
+
+```
+    [PC1] -------- [ROUTER1] -------- [ROUTER2] -------- [PC2]
+   10.0.0.10       eth0:10.0.0.254     eth0:192.168.1.254    192.168.2.10
+                   eth1:192.168.1.1    eth1:192.168.2.254
+                         |
+                       [CLOUD]
+```
+
+### Configurazione Web GUI
+```
+add pc pc1
+add router router1
+add router router2
+add pc pc2
+add cloud cloud1
+
+connect pc1 router1
+connect router1 router2
+connect router2 pc2
+connect router1 cloud1
+
+ip pc1 eth0 10.0.0.10 gateway 10.0.0.254
+ip pc2 eth0 192.168.2.10 gateway 192.168.2.254
+```
+
+### Rete Multi-Router
+Il router1 avrà:
+- eth0: 10.0.0.254 (verso PC1)
+- eth1: 192.168.1.1 (verso router2)
+- eth2: 192.168.3.254 (verso cloud)
+
+Il router2 avrà:
+- eth0: 192.168.1.254 (verso router1)
+- eth1: 192.168.2.254 (verso PC2)
+
+### Test
+```
+ping pc1 192.168.2.10
+ping pc1 192.168.3.254  # ping cloud
+```
+
+---
+
+## 5. Rete con Hub
+
+```
+    [PC1]
+      |
+   [HUB] -------- [PC2]
+      |
+    [PC3]
+```
+
+### Configurazione
+L'hub è un dispositivo passivo che replica i pacchetti a tutte le porte (eccetto quella sorgente).
+
+```
+add pc pc1
+add pc pc2
+add pc pc3
+add hub hub1
+connect pc1 hub1
+connect pc2 hub1
+connect pc3 hub1
+
+ip pc1 eth0 192.168.1.10
+ip pc2 eth0 192.168.1.20
+ip pc3 eth0 192.168.1.30
+```
+
+---
+
+## 6. Rete con Multiple Interfacce
+
+Un PC o Router può avere fino a 4 interfacce (eth0, eth1, eth2, eth3):
+
+### Esempio: PC con 2 reti
+
+```
+    [PC1]
+   eth0: 10.0.0.10 (rete A)
+   eth1: 192.168.1.10 (rete B)
+```
+
+### Configurazione
+```
+ip pc1 eth0 10.0.0.10 gateway 10.0.0.254
+ip pc1 eth1 192.168.1.10 gateway 192.168.1.254
+```
+
+---
+
+## 7. Rete con 3 Router (Internet)
+
+```
+         [INTERNET]
+             |
+         [CLOUD]
+             |
+    [ROUTER1] -------- [ROUTER2] -------- [ROUTER3]
+   192.168.1.254      192.168.2.254       192.168.3.254
+        |                   |                  |
+     [PC1]              [PC2]              [PC3]
+   192.168.1.10       192.168.2.10       192.168.3.10
+```
+
+### Configurazione Web GUI
+```
+add pc pc1
+add router router1
+add pc pc2
+add router router2
+add pc pc3
+add router router3
+add cloud cloud1
+
+connect pc1 router1
+connect router1 router2
+connect router2 router3
+connect router3 cloud1
+connect router1 cloud1
+
+ip pc1 eth0 192.168.1.10 gateway 192.168.1.254
+ip pc2 eth0 192.168.2.10 gateway 192.168.2.254
+ip pc3 eth0 192.168.3.10 gateway 192.168.3.254
+```
+
+---
+
+## 8. Rete con VLAN (Switch)
+
+```
+    [PC1]          [PC3]
+      |              |
+   [SWITCH1] ---- [SWITCH2]
+      |
+    [PC2]
+```
+
+Per configurare VLAN, usa i comandi dentro il container dopo l'avvio:
+
+```
+# Entra nel container
+kathara exec -d nome_lab switch1 -- vlan 10
+```
+
+---
+
+# 🔌 Tipi di Cavi
 
 | Tipo | Colore | Uso Consigliato |
 |------|--------|-----------------|
@@ -137,39 +417,11 @@ kathara-network-designer/
 | Phone | Giallo | Connessioni telefoniche |
 | Coaxial | Marrone | Cavo coassiale |
 
-## 💻 Esempi Pratici
+---
 
-### Esempio 1: Due PC nella stessa rete
+# 💻 Comandi Utili
 
-```
-1. Clicca "PC" → PC1
-2. Clicca "PC" → PC2
-3. Clicca "CONNECT"
-4. Clicca PC1, poi PC2
-5. Seleziona PC1 → "SET IP" → 192.168.1.10
-6. Seleziona PC2 → "SET IP" → 192.168.1.20
-7. EXPORT
-8. START
-9. Test: ping da PC1 a PC2
-```
-
-### Esempio 2: Rete con Router
-
-```
-1. Clicca "PC" → PC1
-2. Clicca "ROUTER" → ROUTER1
-3. Clicca "PC" → PC2
-4. Connetti: PC1 → ROUTER1 → PC2
-5. Configura IP:
-   - PC1: 192.168.1.10, gw: 192.168.1.254
-   - PC2: 192.168.2.10, gw: 192.168.2.254
-6. EXPORT e START
-7. Test ping da PC1 a PC2
-```
-
-## 🔧 Comandi Utili
-
-### Gestione Lab
+## Gestione Lab
 
 ```bash
 # Avvia lab
@@ -188,7 +440,7 @@ kathara list
 kathara connect -d nome_lab -n dispositivo
 ```
 
-### Dentro i Container
+## Dentro i Container
 
 ```bash
 # Visualizza IP
@@ -204,12 +456,31 @@ ip route show
 traceroute <destinazione>
 ```
 
+---
 
-## Base del Progetto :) 
+# 📁 Struttura del Progetto
+
+```
+kathara-network-designer/
+├── kathara_gui/           # GUI Desktop (PyQt6)
+│   └── main.py           
+│
+├── kathara_gui_web/      # GUI Web (Flask)
+│   ├── app.py           
+│   ├── templates/       
+│   ├── static/          
+│   └── labs/            
+│
+├── README.md             # Questo file
+└── GUIDA_PASSO_PASSO.md
+```
+
+---
+
+## Base del Progetto 
 
 - [Kathara](https://www.kathara.org/) - Network Emulator
 - [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - GUI Framework
 - [Flask](https://flask.palletsprojects.com/) - Web Framework
 - Cisco Packet Tracer per l'ispirazione dell'interfaccia
-
 
