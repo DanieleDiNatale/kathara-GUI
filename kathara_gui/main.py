@@ -49,7 +49,7 @@ class DeviceItem(QGraphicsRectItem):
         self.ip_address = ""
         self.gateway = ""
         
-        super().__init__(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT)
+        super().__init__(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT + 25)
         self.setPos(x, y)
         
         self.setBrush(QBrush(Qt.GlobalColor.transparent))
@@ -57,11 +57,20 @@ class DeviceItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         
+        self.name_label = QGraphicsTextItem(self)
+        self.name_label.setPlainText(name)
+        self.name_label.setDefaultTextColor(QColor('white'))
+        self.name_label.setFont(QFont("Arial", 9, QFont.Weight.Bold))
+        self.name_label.setTextWidth(DEVICE_WIDTH)
+        self.name_label.setPos((DEVICE_WIDTH - self.name_label.textWidth()) / 2, DEVICE_HEIGHT + 2)
+        self.name_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.name_label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
+        
         self.connections = []
         self.connection_highlight = False
     
     def boundingRect(self):
-        return QRectF(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT)
+        return QRectF(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT + 25)
     
     def paint(self, painter, option, widget=None):
         color = DEVICE_TYPES[self.device_type]['color']
@@ -248,7 +257,6 @@ class TopologyScene(QGraphicsScene):
         self.connection_mode = False
         self.connection_start = None
         self.selected_cable_type = 'copper-straight'
-        self.device_counter = {'router': 0, 'switch': 0, 'pc': 0, 'hub': 0, 'cloud': 0}
         
         self.setBackgroundBrush(QColor('#1a1a2e'))
         
@@ -259,8 +267,20 @@ class TopologyScene(QGraphicsScene):
             self.addLine(-600, i * 50, 600, i * 50, QPen(QColor('#2a2a4e'), 1))
     
     def add_device(self, device_type, x, y):
-        self.device_counter[device_type] += 1
-        name = f"{device_type.lower()}{self.device_counter[device_type]}"
+        existing_numbers = set()
+        for dev_name in self.devices.keys():
+            if dev_name.startswith(device_type.lower()):
+                try:
+                    num = int(dev_name[len(device_type):])
+                    existing_numbers.add(num)
+                except ValueError:
+                    pass
+        
+        next_num = 1
+        while next_num in existing_numbers:
+            next_num += 1
+        
+        name = f"{device_type.lower()}{next_num}"
         
         if name in self.devices:
             return None
@@ -633,8 +653,8 @@ class MainWindow(QMainWindow):
                 if device_type not in DEVICE_TYPES:
                     self.console.log(f"[ERROR] Unknown device type: {device_type}", "#FF6B6B")
                     return
-                x = 200 + (len(self.scene.devices) % 4) * 180
-                y = 150 + (len(self.scene.devices) // 4) * 150
+                x = -DEVICE_WIDTH / 2
+                y = -DEVICE_HEIGHT / 2
                 device = self.scene.add_device(device_type, x, y)
                 if device:
                     self.console.log(f"[+] Added: {device.name} ({device_type.upper()})", DEVICE_TYPES[device_type]['color'])
@@ -869,8 +889,8 @@ class MainWindow(QMainWindow):
     
     def add_device(self, device_type):
         try:
-            x = 200 + (len(self.scene.devices) % 4) * 180
-            y = 150 + (len(self.scene.devices) // 4) * 150
+            x = -DEVICE_WIDTH / 2
+            y = -DEVICE_HEIGHT / 2
             device = self.scene.add_device(device_type, x, y)
             if device:
                 self.console.log(f"[+] Added: {device.name}")
@@ -1014,7 +1034,6 @@ class MainWindow(QMainWindow):
             self.scene.addLine(i * 50, -1000, i * 50, 1000, QPen(QColor('#2a2a4e'), 1))
             self.scene.addLine(-1000, i * 50, 1000, i * 50, QPen(QColor('#2a2a4e'), 1))
         
-        self.scene.device_counter = {'router': 0, 'switch': 0, 'pc': 0, 'hub': 0, 'cloud': 0}
         self.current_lab_path = None
         self.console.log("[NEW] New lab created")
         self.refresh_connections()
