@@ -474,7 +474,7 @@ document.querySelectorAll('.device-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const type = btn.dataset.type;
         deviceCounter[type]++;
-        const name = `${type.toUpperCase()}${deviceCounter[type]}`;
+        const name = `${type.toLowerCase()}${deviceCounter[type]}`;
         
         const newDevice = {
             name,
@@ -865,7 +865,7 @@ function handleAddCommand(parts) {
         return;
     }
     const type = parts[1];
-    const name = parts[2].toUpperCase();
+    const name = parts[2].toLowerCase();
     
     if (!DEVICE_TYPES[type]) {
         log(`[ERROR] Unknown device type: ${type}`, '#FF6B6B');
@@ -894,7 +894,7 @@ function handleAddCommand(parts) {
     devices.push(newDevice);
     updateDeviceSelect();
     draw();
-    log(`[+] Added: ${name} (${type.toUpperCase()})`, DEVICE_TYPES[type].color);
+    log(`[+] Added: ${name} (${type.toLowerCase()})`, DEVICE_TYPES[type].color);
 }
 
 function handleConnectCommand(parts) {
@@ -903,8 +903,8 @@ function handleConnectCommand(parts) {
         return;
     }
     
-    const name1 = parts[1].toUpperCase();
-    const name2 = parts[2].toUpperCase();
+    const name1 = parts[1].toLowerCase();
+    const name2 = parts[2].toLowerCase();
     const cableType = parts[3] || 'copper-straight';
     
     const dev1 = devices.find(d => d.name === name1);
@@ -954,7 +954,7 @@ function handleIPCommand(parts) {
         return;
     }
     
-    const name = parts[1].toUpperCase();
+    const name = parts[1].toLowerCase();
     const eth = parts[2];
     const ip = parts[3];
     const gateway = parts[4] || '';
@@ -985,7 +985,7 @@ async function handlePingCommand(parts) {
         return;
     }
     
-    const name = parts[1].toUpperCase();
+    const name = parts[1].toLowerCase();
     const targetIP = parts[2] || '8.8.8.8';
     
     const device = devices.find(d => d.name === name);
@@ -1041,7 +1041,7 @@ function handleDeleteCommand(parts) {
         return;
     }
     
-    const name = parts[1].toUpperCase();
+    const name = parts[1].toLowerCase();
     const deviceIndex = devices.findIndex(d => d.name === name);
     
     if (deviceIndex === -1) {
