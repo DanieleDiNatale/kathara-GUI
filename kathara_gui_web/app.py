@@ -50,6 +50,8 @@ def export_lab():
     
     if connections:
         processed = set()
+        device_interfaces = {}
+        
         for conn in connections:
             dev1, dev2 = conn['from'], conn['to']
             pair = tuple(sorted([dev1, dev2]))
@@ -68,6 +70,9 @@ def export_lab():
             
             eth1 = device_interfaces[dev1].get('next_eth', 0)
             eth2 = device_interfaces[dev2].get('next_eth', 0)
+            
+            device_interfaces[dev1][eth1] = net_letter
+            device_interfaces[dev2][eth2] = net_letter
             
             conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
             conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
@@ -99,13 +104,16 @@ def export_lab():
         f.write("  phone: Phone (RJ11)\n")
         f.write("  coaxial: Coaxial\n")
     
-    router_networks = {}
-    for conn in connections:
-        for dev in [conn['from'], conn['to']]:
-            if dev not in router_networks:
-                router_networks[dev] = set()
-        router_networks[conn['from']].add(conn['to'])
-        router_networks[conn['to']].add(conn['from'])
+    network_ips = {
+        'A': '10.0.0',
+        'B': '192.168.1',
+        'C': '192.168.2',
+        'D': '192.168.3',
+        'E': '192.168.4',
+        'F': '192.168.5',
+        'G': '192.168.6',
+        'H': '192.168.7',
+    }
     
     for device in devices:
         name = device['name']
@@ -117,13 +125,13 @@ def export_lab():
         startup_lines = []
         
         if device_type == 'router':
-            num_networks = len(router_networks.get(name, []))
-            for i in range(num_networks):
-                if i == 0:
-                    router_ip = "10.0.0.254"
-                else:
-                    router_ip = f"192.168.{i}.254"
-                startup_lines.append(f"ip addr add {router_ip}/24 dev eth{i}")
+            if name in device_interfaces:
+                eth_indices = [k for k in device_interfaces[name].keys() if isinstance(k, int)]
+                for eth_idx in sorted(eth_indices):
+                    net_letter = device_interfaces[name][eth_idx]
+                    net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                    router_ip = f"{net_ip}.254"
+                    startup_lines.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
             startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
         else:
             if ip and device_type in ['pc', 'cloud']:
@@ -206,32 +214,38 @@ def ping_device():
                 processed.add(pair)
                 
                 if dev1 not in device_interfaces:
-                    device_interfaces[dev1] = 0
+                    device_interfaces[dev1] = {}
                 if dev2 not in device_interfaces:
-                    device_interfaces[dev2] = 0
+                    device_interfaces[dev2] = {}
                 
                 net_letter = chr(65 + len(processed) - 1)
-                eth1 = device_interfaces[dev1]
-                eth2 = device_interfaces[dev2]
+                eth1 = device_interfaces[dev1].get('next_eth', 0)
+                eth2 = device_interfaces[dev2].get('next_eth', 0)
+                
+                device_interfaces[dev1][eth1] = net_letter
+                device_interfaces[dev2][eth2] = net_letter
                 
                 conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
                 conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
                 
-                device_interfaces[dev1] = eth1 + 1
-                device_interfaces[dev2] = eth2 + 1
+                device_interfaces[dev1]['next_eth'] = eth1 + 1
+                device_interfaces[dev2]['next_eth'] = eth2 + 1
         
         lab_conf_path = os.path.join(lab_path, 'lab.conf')
         content = '\r\n'.join(conf_lines) + '\r\n'
         with open(lab_conf_path, 'wb') as f:
             f.write(content.encode('utf-8'))
         
-        router_networks = {}
-        for conn in connections:
-            for dev in [conn['from'], conn['to']]:
-                if dev not in router_networks:
-                    router_networks[dev] = set()
-            router_networks[conn['from']].add(conn['to'])
-            router_networks[conn['to']].add(conn['from'])
+        network_ips = {
+            'A': '10.0.0',
+            'B': '192.168.1',
+            'C': '192.168.2',
+            'D': '192.168.3',
+            'E': '192.168.4',
+            'F': '192.168.5',
+            'G': '192.168.6',
+            'H': '192.168.7',
+        }
         
         for device in devices:
             name = device['name']
@@ -243,13 +257,13 @@ def ping_device():
             startup_lines = []
             
             if device_type == 'router':
-                num_networks = len(router_networks.get(name, []))
-                for i in range(num_networks):
-                    if i == 0:
-                        router_ip = "10.0.0.254"
-                    else:
-                        router_ip = f"192.168.{i}.254"
-                    startup_lines.append(f"ip addr add {router_ip}/24 dev eth{i}")
+                if name in device_interfaces:
+                    eth_indices = [k for k in device_interfaces[name].keys() if isinstance(k, int)]
+                    for eth_idx in sorted(eth_indices):
+                        net_letter = device_interfaces[name][eth_idx]
+                        net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                        router_ip = f"{net_ip}.254"
+                        startup_lines.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
                 startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
             else:
                 if ip and device_type in ['pc', 'cloud']:

@@ -374,22 +374,36 @@ class TopologyScene(QGraphicsScene):
             dev2 = conn.end_device.name
             
             if dev1 not in device_interfaces:
-                device_interfaces[dev1] = 0
+                device_interfaces[dev1] = {}
             if dev2 not in device_interfaces:
-                device_interfaces[dev2] = 0
+                device_interfaces[dev2] = {}
             
             net_letter = chr(65 + len(processed) - 1)
-            eth1 = device_interfaces[dev1]
-            eth2 = device_interfaces[dev2]
+            eth1 = device_interfaces[dev1].get('next_eth', 0)
+            eth2 = device_interfaces[dev2].get('next_eth', 0)
+            
+            device_interfaces[dev1][eth1] = net_letter
+            device_interfaces[dev2][eth2] = net_letter
             
             conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
             conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
             
-            device_interfaces[dev1] = eth1 + 1
-            device_interfaces[dev2] = eth2 + 1
+            device_interfaces[dev1]['next_eth'] = eth1 + 1
+            device_interfaces[dev2]['next_eth'] = eth2 + 1
         
         with open(os.path.join(lab_path, 'lab.conf'), 'wb') as f:
             f.write(('\r\n'.join(conf_lines) + '\r\n').encode('utf-8'))
+        
+        network_ips = {
+            'A': '10.0.0',
+            'B': '192.168.1',
+            'C': '192.168.2',
+            'D': '192.168.3',
+            'E': '192.168.4',
+            'F': '192.168.5',
+            'G': '192.168.6',
+            'H': '192.168.7',
+        }
         
         with open(os.path.join(lab_path, 'topology.txt'), 'w') as f:
             f.write("=" * 50 + "\n")
@@ -409,12 +423,21 @@ class TopologyScene(QGraphicsScene):
         for name, device in self.devices.items():
             startup_file = os.path.join(lab_path, f"{name}.startup")
             startup_cmds = []
-            if device.ip_address:
-                startup_cmds.append(f"ip addr add {device.ip_address}/24 dev {device.eth}")
-            if device.gateway:
-                startup_cmds.append(f"ip route add default via {device.gateway}")
+            
             if device.device_type == 'router':
+                if name in device_interfaces:
+                    eth_indices = [k for k in device_interfaces[name].keys() if isinstance(k, int)]
+                    for eth_idx in sorted(eth_indices):
+                        net_letter = device_interfaces[name][eth_idx]
+                        net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                        router_ip = f"{net_ip}.254"
+                        startup_cmds.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
                 startup_cmds.append("sysctl -w net.ipv4.ip_forward=1")
+            else:
+                if device.ip_address:
+                    startup_cmds.append(f"ip addr add {device.ip_address}/24 dev {device.eth}")
+                if device.gateway:
+                    startup_cmds.append(f"ip route add default via {device.gateway}")
             
             content = '\n'.join(startup_cmds) + '\n' if startup_cmds else '# No configuration\n'
             with open(startup_file, 'wb') as f:
