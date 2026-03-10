@@ -811,6 +811,16 @@ document.getElementById('stopBtn').addEventListener('click', async () => {
     }
 });
 
+document.getElementById('wiresharkBtn').addEventListener('click', () => {
+    if (!currentLabPath) {
+        log('[WARN] Please export/start the lab first with Wireshark enabled', '#F5A623');
+        return;
+    }
+    const wiresharkUrl = 'http://localhost:3000';
+    log(`[INFO] Opening Wireshark at: ${wiresharkUrl}`, '#4A90D9');
+    window.open(wiresharkUrl, '_blank');
+});
+
 document.getElementById('listBtn').addEventListener('click', async () => {
     if (!currentLabPath) {
         log('[WARN] Please export/start the lab first', '#F5A623');

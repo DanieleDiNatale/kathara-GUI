@@ -920,6 +920,17 @@ class MainWindow(QMainWindow):
         self.wireshark_checkbox.setMinimumSize(90, 45)
         self.wireshark_checkbox.setStyleSheet("background-color: #4A90D9; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
         toolbar.addWidget(self.wireshark_checkbox)
+        
+        open_ws_btn = QPushButton("OPEN WIRESHARK")
+        open_ws_btn.setMinimumSize(110, 45)
+        open_ws_btn.setStyleSheet("background-color: #9B59B6; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
+        open_ws_btn.clicked.connect(self.open_wireshark)
+        toolbar.addWidget(open_ws_btn)
+    
+    def open_wireshark(self):
+        import webbrowser
+        self.console.log("[INFO] Opening Wireshark at http://localhost:3000")
+        webbrowser.open('http://localhost:3000')
     
     def add_device(self, device_type):
         try:

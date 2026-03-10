@@ -211,12 +211,41 @@ ip pc2 eth0 192.168.1.10 gateway 192.168.1.254
 6. PC1: Set IP → eth0, 10.0.0.10, gateway 10.0.0.254
 7. PC2: Set IP → eth0, 192.168.1.10, gateway 192.168.1.254
 
-### Note Importanti
-- Il router assegna automaticamente IP alle sue interfacce:
-  - eth0: 10.0.0.254
-  - eth1: 192.168.1.254
-  - eth2: 192.168.2.254
-  - ecc.
+### 📋 Guida Completa IP Router
+
+#### Tabella Rete → IP Gateway
+
+| Network | Rete IP       | Gateway Router | Interfaccia |
+|---------|---------------|----------------|-------------|
+| A       | 10.0.0.x      | 10.0.0.254    | eth0        |
+| B       | 192.168.1.x   | 192.168.1.254 | eth1        |
+| C       | 192.168.2.x   | 192.168.2.254 | eth2        |
+| D       | 192.168.3.x   | 192.168.3.254 | eth3        |
+| E       | 192.168.4.x   | 192.168.4.254 | eth4        |
+| F       | 192.168.5.x   | 192.168.5.254 | eth5        |
+
+#### Regole per i Router:
+1. Ogni connessione tra dispositivi crea una nuova rete (A, B, C, D...)
+2. Il router ha un'interfaccia per ogni rete a cui è connesso
+3. I PC devono usare il gateway del router sulla loro rete
+
+#### Esempio con 2 Router:
+```
+[PC1]----[R1]----[R2]----[PC2]
+   A        B       C        D
+```
+
+- **PC1** (rete A): IP 10.0.0.10, gateway 10.0.0.254
+- **R1**: eth0→A (10.0.0.254), eth1→B (192.168.1.254)
+- **R2**: eth0→B (192.168.1.254), eth1→C (192.168.2.254)
+- **PC2** (rete C): IP 192.168.2.10, gateway 192.168.2.254
+
+#### Suggerimento:
+Il router assegna automaticamente gli IP alle sue interfacce basandosi sulla lettera della rete:
+- Network A → 10.0.0.254
+- Network B → 192.168.1.254
+- Network C → 192.168.2.254
+- Network D → 192.168.3.254
 - Il router abilita automaticamente IP forwarding
 
 ### Test
