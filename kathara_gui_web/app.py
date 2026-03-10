@@ -39,6 +39,8 @@ def export_lab():
     lab_name = data.get('lab_name', 'my_lab')
     devices = data.get('devices', [])
     connections = data.get('connections', [])
+    enable_wireshark = data.get('enable_wireshark', False)
+    wireshark_networks = data.get('wireshark_networks', ['A'])
     
     lab_path = os.path.join(LABS_DIR, lab_name)
     os.makedirs(lab_path, exist_ok=True)
@@ -84,6 +86,16 @@ def export_lab():
     
     if not conf_lines:
         return jsonify({'success': False, 'error': 'No connections! Connect devices before exporting.'}), 400
+    
+    if enable_wireshark:
+        ws_index = 0
+        for net in wireshark_networks:
+            conf_lines.append(f'wireshark[{ws_index}]="{net}"')
+            ws_index += 1
+        conf_lines.append('wireshark[bridged]=true')
+        conf_lines.append('wireshark[port]="3000:3000"')
+        conf_lines.append('wireshark[image]="lscr.io/linuxserver/wireshark"')
+        conf_lines.append('wireshark[num_terms]=0')
     
     lab_conf_path = os.path.join(lab_path, 'lab.conf')
     content = '\r\n'.join(conf_lines) + '\r\n'

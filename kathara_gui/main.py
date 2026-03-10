@@ -355,7 +355,7 @@ class TopologyScene(QGraphicsScene):
         super().mouseMoveEvent(event)
         self.update()
     
-    def generate_full_lab(self, lab_path):
+    def generate_full_lab(self, lab_path, enable_wireshark=False):
         if not os.path.exists(lab_path):
             os.makedirs(lab_path)
         
@@ -390,6 +390,16 @@ class TopologyScene(QGraphicsScene):
             
             device_interfaces[dev1]['next_eth'] = eth1 + 1
             device_interfaces[dev2]['next_eth'] = eth2 + 1
+        
+        if enable_wireshark:
+            num_networks = len(processed)
+            for i in range(num_networks):
+                net_letter = chr(65 + i)
+                conf_lines.append(f'wireshark[{i}]="{net_letter}"')
+            conf_lines.append('wireshark[bridged]=true')
+            conf_lines.append('wireshark[port]="3000:3000"')
+            conf_lines.append('wireshark[image]="lscr.io/linuxserver/wireshark"')
+            conf_lines.append('wireshark[num_terms]=0')
         
         with open(os.path.join(lab_path, 'lab.conf'), 'wb') as f:
             f.write(('\r\n'.join(conf_lines) + '\r\n').encode('utf-8'))
@@ -902,6 +912,14 @@ class MainWindow(QMainWindow):
         stop_btn.setStyleSheet("background-color: #F5A623; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
         stop_btn.clicked.connect(self.stop_lab)
         toolbar.addWidget(stop_btn)
+        
+        toolbar.addSeparator()
+        
+        self.wireshark_checkbox = QPushButton("WIRESHARK")
+        self.wireshark_checkbox.setCheckable(True)
+        self.wireshark_checkbox.setMinimumSize(90, 45)
+        self.wireshark_checkbox.setStyleSheet("background-color: #4A90D9; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
+        toolbar.addWidget(self.wireshark_checkbox)
     
     def add_device(self, device_type):
         try:
@@ -1060,9 +1078,17 @@ class MainWindow(QMainWindow):
         if not self.current_lab_path:
             return
         
-        self.scene.generate_full_lab(self.current_lab_path)
-        self.console.log(f"[EXPORT] Lab exported to: {self.current_lab_path}")
-        QMessageBox.information(self, "Export", f"Lab exported to:\n{self.current_lab_path}")
+        enable_wireshark = hasattr(self, 'wireshark_checkbox') and self.wireshark_checkbox.isChecked()
+        
+        self.scene.generate_full_lab(self.current_lab_path, enable_wireshark)
+        
+        msg = f"Lab exported to:\n{self.current_lab_path}"
+        if enable_wireshark:
+            msg += "\n\nWireshark enabled on port 3000"
+            self.console.log(f"[EXPORT] Lab exported with Wireshark support")
+        else:
+            self.console.log(f"[EXPORT] Lab exported to: {self.current_lab_path}")
+        QMessageBox.information(self, "Export", msg)
     
     def run_kathara_command(self, cmd, description):
         if not self.current_lab_path:
