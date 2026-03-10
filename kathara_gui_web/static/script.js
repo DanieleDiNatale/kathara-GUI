@@ -811,14 +811,36 @@ document.getElementById('stopBtn').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('wiresharkBtn').addEventListener('click', () => {
-    if (!currentLabPath) {
-        log('[WARN] Please export/start the lab first with Wireshark enabled', '#F5A623');
+document.getElementById('wiresharkBtn').addEventListener('click', async () => {
+    const labName = document.getElementById('labName').value || 'my_lab';
+    
+    log('[WIRESHARK] Exporting lab with Wireshark...', '#4A90D9');
+    
+    const exportResult = await apiCall('/api/lab/export', {
+        lab_name: labName,
+        devices: devices.map(d => ({ name: d.name, type: d.type, eth: d.eth, ip: d.ip, gateway: d.gateway, config: d.config })),
+        connections: connections,
+        enable_wireshark: true,
+        wireshark_networks: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].slice(0, connections.length + 1)
+    });
+    
+    if (!exportResult.success) {
+        log('[ERROR] ' + exportResult.error, '#ff0000');
         return;
     }
-    const wiresharkUrl = 'http://localhost:3000';
-    log(`[INFO] Opening Wireshark at: ${wiresharkUrl}`, '#4A90D9');
-    window.open(wiresharkUrl, '_blank');
+    
+    currentLabPath = exportResult.lab_path;
+    log('[WIRESHARK] Starting lab...', '#4A90D9');
+    
+    const startResult = await apiCall('/api/lab/start', { lab_path: currentLabPath });
+    
+    if (startResult.success) {
+        log('[SUCCESS] Lab started with Wireshark!', '#7ED321');
+        log('[INFO] Opening Wireshark at http://localhost:3000', '#4A90D9');
+        window.open('http://localhost:3000', '_blank');
+    } else {
+        log('[ERROR] ' + startResult.error, '#ff0000');
+    }
 });
 
 document.getElementById('listBtn').addEventListener('click', async () => {

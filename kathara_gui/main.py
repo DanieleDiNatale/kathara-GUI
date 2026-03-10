@@ -915,22 +915,27 @@ class MainWindow(QMainWindow):
         
         toolbar.addSeparator()
         
-        self.wireshark_checkbox = QPushButton("WIRESHARK")
-        self.wireshark_checkbox.setCheckable(True)
-        self.wireshark_checkbox.setMinimumSize(90, 45)
-        self.wireshark_checkbox.setStyleSheet("background-color: #4A90D9; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
-        toolbar.addWidget(self.wireshark_checkbox)
-        
-        open_ws_btn = QPushButton("OPEN WIRESHARK")
-        open_ws_btn.setMinimumSize(110, 45)
-        open_ws_btn.setStyleSheet("background-color: #9B59B6; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
-        open_ws_btn.clicked.connect(self.open_wireshark)
-        toolbar.addWidget(open_ws_btn)
+        wireshark_btn = QPushButton("WIRESHARK")
+        wireshark_btn.setMinimumSize(100, 45)
+        wireshark_btn.setStyleSheet("background-color: #4A90D9; color: white; border: 2px solid #222; border-radius: 5px; font-weight: bold;")
+        wireshark_btn.clicked.connect(self.start_with_wireshark)
+        toolbar.addWidget(wireshark_btn)
     
-    def open_wireshark(self):
+    def start_with_wireshark(self):
+        if not self.current_lab_path:
+            self.current_lab_path = QFileDialog.getExistingDirectory(self, "Select Lab Directory")
+        if not self.current_lab_path:
+            return
+        
+        self.console.log("[WIRESHARK] Exporting and starting lab...")
+        
+        self.scene.generate_full_lab(self.current_lab_path, enable_wireshark=True)
+        
         import webbrowser
-        self.console.log("[INFO] Opening Wireshark at http://localhost:3000")
         webbrowser.open('http://localhost:3000')
+        
+        self.run_kathara_command("kathara lstart", "Starting Lab with Wireshark")
+        QMessageBox.information(self, "Wireshark", "Lab started!\nWireshark available at:\nhttp://localhost:3000")
     
     def add_device(self, device_type):
         try:
@@ -1089,17 +1094,12 @@ class MainWindow(QMainWindow):
         if not self.current_lab_path:
             return
         
-        enable_wireshark = hasattr(self, 'wireshark_checkbox') and self.wireshark_checkbox.isChecked()
+        enable_wireshark = False
         
         self.scene.generate_full_lab(self.current_lab_path, enable_wireshark)
         
-        msg = f"Lab exported to:\n{self.current_lab_path}"
-        if enable_wireshark:
-            msg += "\n\nWireshark enabled on port 3000"
-            self.console.log(f"[EXPORT] Lab exported with Wireshark support")
-        else:
-            self.console.log(f"[EXPORT] Lab exported to: {self.current_lab_path}")
-        QMessageBox.information(self, "Export", msg)
+        self.console.log(f"[EXPORT] Lab exported to: {self.current_lab_path}")
+        QMessageBox.information(self, "Export", f"Lab exported to:\n{self.current_lab_path}")
     
     def run_kathara_command(self, cmd, description):
         if not self.current_lab_path:
