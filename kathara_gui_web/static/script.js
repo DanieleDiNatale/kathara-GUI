@@ -737,7 +737,8 @@ document.getElementById('pingBtn').addEventListener('click', () => {
 function log(message, color = '#00ff00') {
     const consoleEl = document.getElementById('console');
     const time = new Date().toLocaleTimeString();
-    consoleEl.innerHTML += `<div style="color:${color}">[${time}] ${message}</div>`;
+    const formattedMessage = message.replace(/\n/g, '<br>');
+    consoleEl.innerHTML += `<div style="color:${color}">[${time}] ${formattedMessage}</div>`;
     consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
@@ -818,14 +819,17 @@ document.getElementById('wiresharkBtn').addEventListener('click', async () => {
     }
     
     currentLabPath = exportResult.lab_path;
-    log('[WIRESHARK] Starting lab...', '#4A90D9');
+    log('[WIRESHARK] Starting lab with Wireshark...', '#4A90D9');
     
     const startResult = await apiCall('/api/lab/start', { lab_path: currentLabPath });
     
     if (startResult.success) {
-        log('[SUCCESS] Lab started with Wireshark!', '#7ED321');
-        log('[INFO] Opening Wireshark at http://127.0.0.1:3000', '#4A90D9');
-        window.open('http://127.0.0.1:3000', '_blank');
+        log('[SUCCESS] Lab started!', '#7ED321');
+        log('[INFO] Wait 5 seconds then open: http://127.0.0.1:3000', '#F5A623');
+        log('[INFO] Or click: <a href="http://127.0.0.1:3000" target="_blank">Open Wireshark</a>', '#4A90D9');
+        setTimeout(() => {
+            window.open('http://127.0.0.1:3000', '_blank');
+        }, 5000);
     } else {
         log('[ERROR] ' + startResult.error, '#ff0000');
     }
