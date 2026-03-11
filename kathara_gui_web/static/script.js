@@ -778,16 +778,26 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 
 document.getElementById('startBtn').addEventListener('click', async () => {
     const labName = document.getElementById('labName').value || 'my_lab';
-    const enableWireshark = document.getElementById('wiresharkCheck').checked;
     
     if (!currentLabPath) {
         const result = await apiCall('/api/lab/export', {
             lab_name: labName,
             devices: devices.map(d => ({ name: d.name, type: d.type, eth: d.eth, ip: d.ip, gateway: d.gateway, config: d.config })),
-            connections: connections,
-            enable_wireshark: enableWireshark,
-            wireshark_networks: enableWireshark ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].slice(0, connections.length + 1) : []
+            connections: connections
         });
+        if (result.success) {
+            currentLabPath = result.lab_path;
+            log(`[EXPORT] Lab exported to: ${result.lab_path}`, '#4A90D9');
+        }
+    }
+    
+    if (currentLabPath) {
+        const result = await apiCall('/api/lab/start', { lab_path: currentLabPath });
+        log(result.message || result.error, result.success ? '#7ED321' : '#ff0000');
+    } else {
+        log('[ERROR] Please export the lab first', '#ff0000');
+    }
+});
         if (result.success) {
             currentLabPath = result.lab_path;
         }
@@ -797,7 +807,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
         const result = await apiCall('/api/lab/start', { lab_path: currentLabPath });
         log(result.message || result.error, result.success ? '#7ED321' : '#ff0000');
         if (enableWireshark) {
-            log(`[INFO] Wireshark available at: http://localhost:3000`, '#F5A623');
+            log(`[INFO] Wireshark available at: http://127.0.0.1:3000`, '#F5A623');
         }
     } else {
         log('[ERROR] Please export the lab first', '#ff0000');
@@ -836,8 +846,8 @@ document.getElementById('wiresharkBtn').addEventListener('click', async () => {
     
     if (startResult.success) {
         log('[SUCCESS] Lab started with Wireshark!', '#7ED321');
-        log('[INFO] Opening Wireshark at http://localhost:3000', '#4A90D9');
-        window.open('http://localhost:3000', '_blank');
+        log('[INFO] Opening Wireshark at http://127.0.0.1:3000', '#4A90D9');
+        window.open('http://127.0.0.1:3000', '_blank');
     } else {
         log('[ERROR] ' + startResult.error, '#ff0000');
     }
