@@ -456,7 +456,7 @@ kathara exec -d nome_lab switch1 -- vlan 10
 
 # 💻 Comandi Utili
 
-## Gestione Lab
+## Gestione Laboratorio
 
 ```bash
 # Avvia lab
@@ -493,7 +493,7 @@ traceroute <destinazione>
 
 ---
 
-# 🦈 Guida Wireshark
+# 🦈 Guida per l'uso di Wireshark
 
 ## Panoramica
 
@@ -694,5 +694,3 @@ kathara-network-designer/
 - [Kathara](https://www.kathara.org/) - Network Emulator
 - [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - GUI Framework
 - [Flask](https://flask.palletsprojects.com/) - Web Framework
-- Cisco Packet Tracer per l'ispirazione dell'interfaccia
-
