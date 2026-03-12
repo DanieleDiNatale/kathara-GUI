@@ -824,12 +824,45 @@ document.getElementById('wiresharkBtn').addEventListener('click', async () => {
     const startResult = await apiCall('/api/lab/start', { lab_path: currentLabPath });
     
     if (startResult.success) {
-        log('[SUCCESS] Lab started!', '#7ED321');
-        log('[INFO] Wait 5 seconds then open: http://127.0.0.1:3000', '#F5A623');
-        log('[INFO] Or click: <a href="http://127.0.0.1:3000" target="_blank">Open Wireshark</a>', '#4A90D9');
-        setTimeout(() => {
-            window.open('http://127.0.0.1:3000', '_blank');
-        }, 5000);
+        log('[SUCCESS] Lab started with Wireshark!', '#7ED321');
+        
+        const wsOpen = await apiCall('/api/wireshark/open', {});
+        if (wsOpen.success) {
+            log('[WIRESHARK] Opening Wireshark on your PC...', '#4A90D9');
+        } else {
+            log('[WARN] Could not open Wireshark: ' + wsOpen.error, '#F5A623');
+        }
+        
+        log('', '#888');
+        log('=== WIRESHARK PACKET CAPTURE GUIDE ===', '#00FFFF');
+        log('', '#888');
+        log('1. SELECT INTERFACE in Wireshark:', '#F5A623');
+        log('   - Look for "veth*" interfaces (Docker/Kathara)', '#888');
+        log('   - Or look for "eth0", "eth1" if using bridged', '#888');
+        log('', '#888');
+        log('2. NETWORK MAPPING:', '#F5A623');
+        
+        const ifResult = await apiCall('/api/wireshark/interfaces', {});
+        if (ifResult.success && ifResult.interfaces.length > 0) {
+            ifResult.interfaces.forEach(iface => {
+                log(`   Network ${iface.network}: ${iface.ip_range} range`, '#888');
+            });
+        } else {
+            log('   Network A: 10.0.0.x (eth0)', '#888');
+            log('   Network B: 192.168.1.x (eth1)', '#888');
+            log('   Network C: 192.168.2.x (eth2)', '#888');
+        }
+        
+        log('', '#888');
+        log('3. FILTER PACKETS (examples):', '#F5A623');
+        log('   icmp          - Show only ping packets', '#888');
+        log('   tcp           - Show TCP packets', '#888');
+        log('   udp           - Show UDP packets', '#888');
+        log('   ip.addr==10.0.0.10 - Filter by IP', '#888');
+        log('   icmp && ip.addr==10.0.0.10 - Ping to specific IP', '#888');
+        log('', '#888');
+        log('4. START CAPTURE: Click shark fin button', '#7ED321');
+        
     } else {
         log('[ERROR] ' + startResult.error, '#ff0000');
     }

@@ -92,10 +92,6 @@ def export_lab():
         for net in wireshark_networks:
             conf_lines.append(f'wireshark[{ws_index}]="{net}"')
             ws_index += 1
-        conf_lines.append('wireshark[bridged]=true')
-        conf_lines.append('wireshark[port]="3000:3000"')
-        conf_lines.append('wireshark[image]="lscr.io/linuxserver/wireshark"')
-        conf_lines.append('wireshark[num_terms]=0')
     
     lab_conf_path = os.path.join(lab_path, 'lab.conf')
     content = '\r\n'.join(conf_lines) + '\r\n'
@@ -127,6 +123,17 @@ def export_lab():
         'H': '192.168.7',
     }
     
+    router_networks = {}
+    for device in devices:
+        if device.get('type') == 'router' and device['name'] in device_interfaces:
+            for eth_idx, net_letter in device_interfaces[device['name']].items():
+                if isinstance(eth_idx, int):
+                    if net_letter not in router_networks:
+                        router_networks[net_letter] = []
+                    router_networks[net_letter].append(device['name'])
+    
+    network_router_index = {net: 0 for net in router_networks}
+    
     for device in devices:
         name = device['name']
         device_type = device.get('type', 'pc')
@@ -142,12 +149,43 @@ def export_lab():
                 for eth_idx in sorted(eth_indices):
                     net_letter = device_interfaces[name][eth_idx]
                     net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
-                    router_ip = f"{net_ip}.254"
+                    
+                    routers_on_net = router_networks.get(net_letter, [])
+                    if len(routers_on_net) > 1:
+                        router_idx = network_router_index[net_letter]
+                        network_router_index[net_letter] += 1
+                        router_ip = f"{net_ip}.{1 + router_idx}"
+                    else:
+                        router_ip = f"{net_ip}.254"
+                    
+                    startup_lines.append(f"ip link set eth{eth_idx} up")
                     startup_lines.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
+            
+            my_net_letters = [device_interfaces[name][k] for k in device_interfaces[name].keys() if isinstance(k, int)]
+            for net_letter in router_networks.keys():
+                if net_letter not in my_net_letters:
+                    for next_hop_router in router_networks[net_letter]:
+                        if next_hop_router != name and next_hop_router in device_interfaces:
+                            for eth_idx, connected_net in device_interfaces[next_hop_router].items():
+                                if isinstance(eth_idx, int) and connected_net in my_net_letters:
+                                    other_net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                                    routers_on_net = router_networks.get(connected_net, [])
+                                    if len(routers_on_net) > 1:
+                                        idx = network_router_index[connected_net]
+                                        hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.{1 + idx}"
+                                    else:
+                                        hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.254"
+                                    startup_lines.append(f"ip route add {other_net_ip}.0/24 via {hop_ip}")
+                                    break
+                            break
+            
             startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
         else:
             if ip and device_type in ['pc', 'cloud']:
-                startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
+                if '/' in ip:
+                    startup_lines.append(f"ip addr add {ip} dev {eth}")
+                else:
+                    startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
                 
                 if gateway:
                     startup_lines.append(f"ip route add default via {gateway}")
@@ -259,6 +297,17 @@ def ping_device():
             'H': '192.168.7',
         }
         
+        router_networks = {}
+        for device in devices:
+            if device.get('type') == 'router' and device['name'] in device_interfaces:
+                for eth_idx, net_letter in device_interfaces[device['name']].items():
+                    if isinstance(eth_idx, int):
+                        if net_letter not in router_networks:
+                            router_networks[net_letter] = []
+                        router_networks[net_letter].append(device['name'])
+        
+        network_router_index = {net: 0 for net in router_networks}
+        
         for device in devices:
             name = device['name']
             device_type = device.get('type', 'pc')
@@ -274,12 +323,43 @@ def ping_device():
                     for eth_idx in sorted(eth_indices):
                         net_letter = device_interfaces[name][eth_idx]
                         net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
-                        router_ip = f"{net_ip}.254"
+                        
+                        routers_on_net = router_networks.get(net_letter, [])
+                        if len(routers_on_net) > 1:
+                            router_idx = network_router_index[net_letter]
+                            network_router_index[net_letter] += 1
+                            router_ip = f"{net_ip}.{1 + router_idx}"
+                        else:
+                            router_ip = f"{net_ip}.254"
+                        
+                        startup_lines.append(f"ip link set eth{eth_idx} up")
                         startup_lines.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
+                
+                my_net_letters = [device_interfaces[name][k] for k in device_interfaces[name].keys() if isinstance(k, int)]
+                for net_letter in router_networks.keys():
+                    if net_letter not in my_net_letters:
+                        for next_hop_router in router_networks[net_letter]:
+                            if next_hop_router != name and next_hop_router in device_interfaces:
+                                for eth_idx, connected_net in device_interfaces[next_hop_router].items():
+                                    if isinstance(eth_idx, int) and connected_net in my_net_letters:
+                                        other_net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                                        routers_on_net = router_networks.get(connected_net, [])
+                                        if len(routers_on_net) > 1:
+                                            idx = network_router_index[connected_net]
+                                            hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.{1 + idx}"
+                                        else:
+                                            hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.254"
+                                        startup_lines.append(f"ip route add {other_net_ip}.0/24 via {hop_ip}")
+                                        break
+                                break
+                
                 startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
             else:
                 if ip and device_type in ['pc', 'cloud']:
-                    startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
+                    if '/' in ip:
+                        startup_lines.append(f"ip addr add {ip} dev {eth}")
+                    else:
+                        startup_lines.append(f"ip addr add {ip}/24 dev {eth}")
                     
                     if gateway:
                         startup_lines.append(f"ip route add default via {gateway}")
@@ -372,6 +452,72 @@ def connect_device():
 def get_labs():
     labs = [d for d in os.listdir(LABS_DIR) if os.path.isdir(os.path.join(LABS_DIR, d))]
     return jsonify({'labs': labs})
+
+@app.route('/api/devices/list', methods=['GET'])
+def list_devices_simple():
+    try:
+        result = subprocess.run(
+            ['docker', 'ps', '--filter', 'name=kathara', '--format', '{{.Names}}'],
+            capture_output=True, text=True, timeout=10
+        )
+        devices = []
+        seen = set()
+        for full_name in result.stdout.strip().split('\n'):
+            full_name = full_name.strip()
+            if full_name:
+                parts = full_name.split('_')
+                if len(parts) >= 3:
+                    device_name = parts[2]
+                    if device_name not in seen:
+                        seen.add(device_name)
+                        devices.append({'name': device_name, 'status': 'running'})
+        return jsonify({'success': True, 'devices': devices})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/wireshark/open', methods=['POST'])
+def open_wireshark():
+    try:
+        import platform
+        system = platform.system()
+        
+        if system == 'Windows':
+            subprocess.Popen(['wireshark.exe'], shell=True)
+        elif system == 'Darwin':
+            subprocess.Popen(['open', '-a', 'Wireshark'])
+        else:
+            subprocess.Popen(['wireshark'])
+        
+        return jsonify({'success': True, 'message': 'Wireshark opened'})
+    except FileNotFoundError:
+        return jsonify({'success': False, 'error': 'Wireshark not found. Please install Wireshark on your PC.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/wireshark/interfaces', methods=['GET'])
+def get_wireshark_interfaces():
+    try:
+        result = subprocess.run(
+            ['docker', 'network', 'ls', '--filter', 'name=kathara', '--format', '{{.Name}}'],
+            capture_output=True, text=True, timeout=10
+        )
+        interfaces = []
+        for net in result.stdout.strip().split('\n'):
+            if net:
+                parts = net.split('_')
+                if len(parts) >= 3:
+                    net_letter = parts[2]
+                    network_ips = {'A': '10.0.0.x', 'B': '192.168.1.x', 'C': '192.168.2.x', 
+                                   'D': '192.168.3.x', 'E': '192.168.4.x', 'F': '192.168.5.x',
+                                   'G': '192.168.6.x', 'H': '192.168.7.x'}
+                    interfaces.append({
+                        'network': net_letter,
+                        'ip_range': network_ips.get(net_letter, 'unknown'),
+                        'docker_net': net
+                    })
+        return jsonify({'success': True, 'interfaces': interfaces})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)

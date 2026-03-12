@@ -396,10 +396,6 @@ class TopologyScene(QGraphicsScene):
             for i in range(num_networks):
                 net_letter = chr(65 + i)
                 conf_lines.append(f'wireshark[{i}]="{net_letter}"')
-            conf_lines.append('wireshark[bridged]=true')
-            conf_lines.append('wireshark[port]="3000:3000"')
-            conf_lines.append('wireshark[image]="lscr.io/linuxserver/wireshark"')
-            conf_lines.append('wireshark[num_terms]=0')
         
         with open(os.path.join(lab_path, 'lab.conf'), 'wb') as f:
             f.write(('\r\n'.join(conf_lines) + '\r\n').encode('utf-8'))
@@ -430,6 +426,17 @@ class TopologyScene(QGraphicsScene):
                     if device.gateway:
                         f.write(f"  Gateway: {device.gateway}\n")
         
+        router_networks = {}
+        for name, device in self.devices.items():
+            if device.device_type == 'router' and name in device_interfaces:
+                for eth_idx, net_letter in device_interfaces[name].items():
+                    if isinstance(eth_idx, int):
+                        if net_letter not in router_networks:
+                            router_networks[net_letter] = []
+                        router_networks[net_letter].append(name)
+        
+        network_router_index = {net: 0 for net in router_networks}
+        
         for name, device in self.devices.items():
             startup_file = os.path.join(lab_path, f"{name}.startup")
             startup_cmds = []
@@ -440,12 +447,43 @@ class TopologyScene(QGraphicsScene):
                     for eth_idx in sorted(eth_indices):
                         net_letter = device_interfaces[name][eth_idx]
                         net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
-                        router_ip = f"{net_ip}.254"
+                        
+                        routers_on_net = router_networks.get(net_letter, [])
+                        if len(routers_on_net) > 1:
+                            router_idx = network_router_index[net_letter]
+                            network_router_index[net_letter] += 1
+                            router_ip = f"{net_ip}.{1 + router_idx}"
+                        else:
+                            router_ip = f"{net_ip}.254"
+                        
+                        startup_cmds.append(f"ip link set eth{eth_idx} up")
                         startup_cmds.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
+                
+                my_net_letters = [device_interfaces[name][k] for k in device_interfaces[name].keys() if isinstance(k, int)]
+                for net_letter in router_networks.keys():
+                    if net_letter not in my_net_letters:
+                        for next_hop_router in router_networks[net_letter]:
+                            if next_hop_router != name and next_hop_router in device_interfaces:
+                                for eth_idx, connected_net in device_interfaces[next_hop_router].items():
+                                    if isinstance(eth_idx, int) and connected_net in my_net_letters:
+                                        other_net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                                        routers_on_net = router_networks.get(connected_net, [])
+                                        if len(routers_on_net) > 1:
+                                            idx = network_router_index[connected_net]
+                                            hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.{1 + idx}"
+                                        else:
+                                            hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.254"
+                                        startup_cmds.append(f"ip route add {other_net_ip}.0/24 via {hop_ip}")
+                                        break
+                                break
+                
                 startup_cmds.append("sysctl -w net.ipv4.ip_forward=1")
             else:
                 if device.ip_address:
-                    startup_cmds.append(f"ip addr add {device.ip_address}/24 dev {device.eth}")
+                    if '/' in device.ip_address:
+                        startup_cmds.append(f"ip addr add {device.ip_address} dev {device.eth}")
+                    else:
+                        startup_cmds.append(f"ip addr add {device.ip_address}/24 dev {device.eth}")
                 if device.gateway:
                     startup_cmds.append(f"ip route add default via {device.gateway}")
             
@@ -922,20 +960,53 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(wireshark_btn)
     
     def start_with_wireshark(self):
+        import platform
+        import subprocess
+        
         if not self.current_lab_path:
             self.current_lab_path = QFileDialog.getExistingDirectory(self, "Select Lab Directory")
         if not self.current_lab_path:
             return
         
-        self.console.log("[WIRESHARK] Exporting and starting lab...")
+        self.console.log("[WIRESHARK] Exporting and starting lab...", "#4A90D9")
         
         self.scene.generate_full_lab(self.current_lab_path, enable_wireshark=True)
         
-        import webbrowser
-        webbrowser.open('http://localhost:3000')
+        self.run_kathara_command("kathara lstart", "Starting Lab")
         
-        self.run_kathara_command("kathara lstart", "Starting Lab with Wireshark")
-        QMessageBox.information(self, "Wireshark", "Lab started!\nWireshark available at:\nhttp://localhost:3000")
+        try:
+            system = platform.system()
+            if system == 'Windows':
+                subprocess.Popen(['wireshark.exe'], shell=True)
+            elif system == 'Darwin':
+                subprocess.Popen(['open', '-a', 'Wireshark'])
+            else:
+                subprocess.Popen(['wireshark'])
+            self.console.log("[WIRESHARK] Opening Wireshark on your PC...", "#4A90D9")
+        except FileNotFoundError:
+            self.console.log("[WARN] Wireshark not found on this PC", "#F5A623")
+        
+        self.console.log("", "#888")
+        self.console.log("=== WIRESHARK PACKET CAPTURE GUIDE ===", "#00FFFF")
+        self.console.log("", "#888")
+        self.console.log("1. SELECT INTERFACE in Wireshark:", "#F5A623")
+        self.console.log("   - Look for 'veth*' interfaces (Docker/Kathara)", "#888")
+        self.console.log("   - Or look for 'eth0', 'eth1' if using bridged", "#888")
+        self.console.log("", "#888")
+        self.console.log("2. NETWORK MAPPING:", "#F5A623")
+        self.console.log("   Network A: 10.0.0.x (eth0)", "#888")
+        self.console.log("   Network B: 192.168.1.x (eth1)", "#888")
+        self.console.log("   Network C: 192.168.2.x (eth2)", "#888")
+        self.console.log("   Network D: 192.168.3.x (eth3)", "#888")
+        self.console.log("", "#888")
+        self.console.log("3. FILTER PACKETS (examples):", "#F5A623")
+        self.console.log("   icmp          - Show only ping packets", "#888")
+        self.console.log("   tcp           - Show TCP packets", "#888")
+        self.console.log("   udp           - Show UDP packets", "#888")
+        self.console.log("   ip.addr==10.0.0.10 - Filter by IP", "#888")
+        self.console.log("   icmp && ip.addr==10.0.0.10 - Ping to specific IP", "#888")
+        self.console.log("", "#888")
+        self.console.log("4. START CAPTURE: Click shark fin button", "#7ED321")
     
     def add_device(self, device_type):
         try:
