@@ -76,8 +76,16 @@ def export_lab():
             device_interfaces[dev1][eth1] = net_letter
             device_interfaces[dev2][eth2] = net_letter
             
-            conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
-            conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
+            dev1_mac = ''
+            dev2_mac = ''
+            for d in devices:
+                if d.get('name') == dev1 and d.get('mac'):
+                    dev1_mac = '/' + d.get('mac')
+                if d.get('name') == dev2 and d.get('mac'):
+                    dev2_mac = '/' + d.get('mac')
+            
+            conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}{dev1_mac}\"")
+            conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}{dev2_mac}\"")
             
             device_interfaces[dev1]['next_eth'] = eth1 + 1
             device_interfaces[dev2]['next_eth'] = eth2 + 1
@@ -86,6 +94,19 @@ def export_lab():
     
     if not conf_lines:
         return jsonify({'success': False, 'error': 'No connections! Connect devices before exporting.'}), 400
+    
+    for device in devices:
+        name = device.get('name', '')
+        device_type = device.get('type', 'pc')
+        
+        if device_type == 'pc':
+            conf_lines.append(f'{name}[image]="kathara/base"')
+        
+        ip_version = device.get('ip_version', '4')
+        if ip_version == '6':
+            conf_lines.append(f'{name}[ipv6]="true"')
+        else:
+            conf_lines.append(f'{name}[ipv6]="false"')
     
     if enable_wireshark:
         ws_index = 0

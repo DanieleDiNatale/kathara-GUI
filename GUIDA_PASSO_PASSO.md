@@ -39,7 +39,40 @@ NOMEDISPOSITIVO[numero_interfaccia]=RETE
 PC1[0]=A
 PC2[0]=A
 ```
-Significa: PC1 e PC2 sono collegati entrambi alla rete "A" (同一 rete).
+Significa: PC1 e PC2 sono collegati entrambi alla rete "A" (stessa rete).
+
+### Configurazione Avanzata lab.conf
+
+#### Indirizzo MAC
+È possibile specificare un indirizzo MAC personalizzato per ogni dispositivo:
+```
+PC1[0]="A/00:00:00:00:00:01"
+PC2[0]="A/00:00:00:00:00:02"
+```
+Il formato è: `RETE/MAC`
+
+#### Immagine Docker
+È possibile specificare l'immagine Docker utilizzata:
+```
+PC1[image]="kathara/base"
+```
+
+#### IPv6
+Per abilitare o disabilitare IPv6:
+```
+PC1[ipv6]="true"   # IPv6 abilitato
+PC2[ipv6]="false"  # IPv6 disabilitato
+```
+
+#### Esempio Completo
+```
+PC1[0]="A/00:00:00:00:00:01"
+PC1[image]="kathara/base"
+PC1[ipv6]="false"
+PC2[0]="A/00:00:00:00:00:02"
+PC2[image]="kathara/base"
+PC2[ipv6]="false"
+```
 
 ---
 

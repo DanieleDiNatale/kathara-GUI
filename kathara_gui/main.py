@@ -48,6 +48,9 @@ class DeviceItem(QGraphicsRectItem):
         self.eth = "eth0"
         self.ip_address = ""
         self.gateway = ""
+        self.mac_address = ""
+        self.ipv6_address = ""
+        self.ip_version = "4"
         
         super().__init__(0, 0, DEVICE_WIDTH, DEVICE_HEIGHT + 25)
         self.setPos(x, y)
@@ -197,6 +200,15 @@ class DeviceItem(QGraphicsRectItem):
         self.eth = eth
         self.ip_address = ip
         self.gateway = gateway
+    
+    def set_mac(self, mac):
+        self.mac_address = mac
+    
+    def set_ipv6(self, ipv6):
+        self.ipv6_address = ipv6
+    
+    def set_ip_version(self, version):
+        self.ip_version = version
 
 class ConnectionItem(QGraphicsPathItem):
     def __init__(self, start_device, end_device, cable_type='copper-straight'):
@@ -385,11 +397,22 @@ class TopologyScene(QGraphicsScene):
             device_interfaces[dev1][eth1] = net_letter
             device_interfaces[dev2][eth2] = net_letter
             
-            conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}\"")
-            conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}\"")
+            mac1 = f"/{self.devices[dev1].mac_address}" if self.devices[dev1].mac_address else ""
+            mac2 = f"/{self.devices[dev2].mac_address}" if self.devices[dev2].mac_address else ""
+            
+            conf_lines.append(f"{dev1}[{eth1}]=\"{net_letter}{mac1}\"")
+            conf_lines.append(f"{dev2}[{eth2}]=\"{net_letter}{mac2}\"")
             
             device_interfaces[dev1]['next_eth'] = eth1 + 1
             device_interfaces[dev2]['next_eth'] = eth2 + 1
+        
+        for name, device in self.devices.items():
+            if device.device_type == 'pc':
+                conf_lines.append(f'{name}[image]="kathara/base"')
+            if hasattr(device, 'ip_version') and device.ip_version == '6':
+                conf_lines.append(f'{name}[ipv6]="true"')
+            else:
+                conf_lines.append(f'{name}[ipv6]="false"')
         
         if enable_wireshark:
             num_networks = len(processed)
@@ -492,7 +515,7 @@ class TopologyScene(QGraphicsScene):
                 f.write(content.encode('utf-8'))
 
 class IPConfigDialog(QDialog):
-    def __init__(self, device_name, current_ip="", current_gateway="", current_eth="eth0", parent=None):
+    def __init__(self, device_name, current_ip="", current_gateway="", current_eth="eth0", current_mac="", current_ipv6="", parent=None):
         super().__init__(parent)
         self.setWindowTitle(f"Configure - {device_name}")
         self.setModal(True)
@@ -510,13 +533,29 @@ class IPConfigDialog(QDialog):
         self.eth_combo.setCurrentText(current_eth)
         form.addRow("Interface:", self.eth_combo)
         
+        self.version_combo = QComboBox()
+        self.version_combo.addItems(["IPv4", "IPv6"])
+        if current_ipv6:
+            self.version_combo.setCurrentText("IPv6")
+        else:
+            self.version_combo.setCurrentText("IPv4")
+        form.addRow("IP Version:", self.version_combo)
+        
         self.ip_edit = QLineEdit(current_ip)
         self.ip_edit.setPlaceholderText("192.168.1.10")
         form.addRow("IP Address:", self.ip_edit)
         
+        self.ipv6_edit = QLineEdit(current_ipv6)
+        self.ipv6_edit.setPlaceholderText("2001:db8::1")
+        form.addRow("IPv6 Address:", self.ipv6_edit)
+        
         self.gateway_edit = QLineEdit(current_gateway)
         self.gateway_edit.setPlaceholderText("192.168.1.254")
         form.addRow("Gateway:", self.gateway_edit)
+        
+        self.mac_edit = QLineEdit(current_mac)
+        self.mac_edit.setPlaceholderText("00:00:00:00:00:01")
+        form.addRow("MAC Address:", self.mac_edit)
         
         layout.addLayout(form)
         
@@ -530,7 +569,8 @@ class IPConfigDialog(QDialog):
         layout.addWidget(buttons)
     
     def get_values(self):
-        return self.eth_combo.currentText(), self.ip_edit.text().strip(), self.gateway_edit.text().strip()
+        is_ipv6 = self.version_combo.currentText() == "IPv6"
+        return self.eth_combo.currentText(), self.ip_edit.text().strip(), self.gateway_edit.text().strip(), self.mac_edit.text().strip(), self.ipv6_edit.text().strip() if is_ipv6 else ""
 
 class ConsoleWidget(QTextEdit):
     def __init__(self):
@@ -1026,13 +1066,19 @@ class MainWindow(QMainWindow):
             if device.device_type in ['hub', 'switch']:
                 self.console.log(f"[INFO] {device.device_type.upper()} cannot have IP address", '#FF6B6B')
                 return
-            dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, device.eth, self)
+            dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, device.eth, getattr(device, 'mac_address', ''), getattr(device, 'ipv6_address', ''), self)
             if dialog.exec():
-                eth, ip, gateway = dialog.get_values()
+                eth, ip, gateway, mac, ipv6 = dialog.get_values()
                 device.set_ip(eth, ip, gateway)
+                if mac:
+                    device.set_mac(mac)
+                if ipv6:
+                    device.set_ipv6(ipv6)
+                ip_version = dialog.version_combo.currentText()
+                device.set_ip_version('6' if ip_version == 'IPv6' else '4')
                 self.on_selection_changed()
-                if ip:
-                    self.console.log(f"[IP] {device.name}: {ip}")
+                if ip or ipv6:
+                    self.console.log(f"[IP] {device.name}: {ip or ipv6}" + (f" mac: {mac}" if mac else ""))
     
     def ping_device(self):
         items = self.canvas.scene().selectedItems()

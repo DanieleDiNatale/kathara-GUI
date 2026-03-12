@@ -667,15 +667,35 @@ function openIPDialog(device) {
     const eth = prompt(`Configure ${device.name}:\nSelect interface (${ethOptions.join(', ')}):`, selectedEth);
     if (eth !== null && ethOptions.includes(eth)) {
         device.eth = eth;
-        const ip = prompt(`Enter IP address for ${device.name}:`, device.ip || '');
-        if (ip !== null && ip.trim() !== '') {
-            device.ip = ip.trim();
-            const gw = prompt(`Enter Gateway (optional):`, device.gateway || '');
-            if (gw !== null) {
-                device.gateway = gw.trim();
+        
+        const version = prompt(`IP Version for ${device.name}:\nEnter '4' for IPv4 or '6' for IPv6:`, device.ip_version || '4');
+        if (version !== null && (version === '4' || version === '6')) {
+            device.ip_version = version;
+            
+            if (version === '4') {
+                const ip = prompt(`Enter IPv4 address for ${device.name} (e.g., 192.168.1.10):`, device.ip || '');
+                if (ip !== null && ip.trim() !== '') {
+                    device.ip = ip.trim();
+                    const gw = prompt(`Enter Gateway (optional):`, device.gateway || '');
+                    if (gw !== null) {
+                        device.gateway = gw.trim();
+                    }
+                }
+            } else {
+                const ip = prompt(`Enter IPv6 address for ${device.name} (e.g., 2001:db8::1):`, device.ipv6 || '');
+                if (ip !== null && ip.trim() !== '') {
+                    device.ipv6 = ip.trim();
+                }
             }
+            
+            const mac = prompt(`Enter MAC address for ${device.name} (e.g., 00:00:00:00:00:01):`, device.mac || '');
+            if (mac !== null && mac.trim() !== '') {
+                device.mac = mac.trim();
+            }
+            
             updatePropertiesPanel();
-            log(`[IP] ${device.name} ${eth}:${device.ip}` + (device.gateway ? ` gateway: ${device.gateway}` : ''), '#FFFF00');
+            let ipInfo = device.ip_version === '6' ? device.ipv6 : device.ip;
+            log(`[IP] ${device.name} ${eth}:${ipInfo}` + (device.gateway ? ` gateway: ${device.gateway}` : '') + (device.mac ? ` mac: ${device.mac}` : ''), '#FFFF00');
             draw();
         }
     } else if (eth !== null) {

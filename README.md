@@ -96,10 +96,41 @@ del pc1
 
 ## 📡 Configurazione IP
 
+### IPv4 (Default)
 1. Click destro su dispositivo → **Set IP**
 2. Seleziona interfaccia (eth0, eth1, eth2, eth3)
-3. Inserisci IP (es. 192.168.1.10)
-4. Inserisci Gateway (opzionale, es. 192.168.1.254)
+3. Seleziona **IPv4**
+4. Inserisci IP (es. 192.168.1.10)
+5. Inserisci Gateway (opzionale, es. 192.168.1.254)
+
+### IPv6
+1. Click destro su dispositivo → **Set IP**
+2. Seleziona interfaccia (eth0, eth1, eth2, eth3)
+3. Seleziona **IPv6**
+4. Inserisci indirizzo IPv6 (es. 2001:db8::1)
+
+### MAC Address
+Per ogni dispositivo è possibile specificare un indirizzo MAC personalizzato:
+1. Click destro su dispositivo → **Set IP**
+2. Inserisci MAC Address (es. 00:00:00:00:00:01)
+
+### lab.conf - Parametri Avanzati
+```bash
+# Configurazione con MAC e IPv6
+PC1[0]="A/00:00:00:00:00:01"
+PC1[image]="kathara/base"
+PC1[ipv6]="false"
+
+PC2[0]="A/00:00:00:00:00:02"
+PC2[image]="kathara/base"
+PC2[ipv6]="true"
+```
+
+| Parametro | Descrizione | Esempio |
+|-----------|-------------|---------|
+| `device[N]="RETE/MAC"` | Rete con MAC opzionale | `A/00:00:00:00:00:01` |
+| `device[image]` | Immagine Docker | `kathara/base` |
+| `device[ipv6]` | Abilita IPv6 | `true` o `false` |
 
 ---
 
@@ -145,6 +176,11 @@ python main.py
 
 ### Configurazione IP
 - **SET IP**: Configura IP dispositivo selezionato
+  - Seleziona interfaccia (eth0-eth3)
+  - Scegli IPv4 o IPv6
+  - Inserisci indirizzo IP
+  - Inserisci Gateway (opzionale)
+  - Inserisci MAC Address (opzionale)
 - **PING**: Test ping
 
 ---
