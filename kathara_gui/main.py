@@ -406,11 +406,17 @@ class TopologyScene(QGraphicsScene):
             device_interfaces[dev1]['next_eth'] = eth1 + 1
             device_interfaces[dev2]['next_eth'] = eth2 + 1
         
+        conf_lines.insert(0, f'LAB_DESCRIPTION="Kathara Network Lab"')
+        conf_lines.insert(1, 'LAB_VERSION=1.0')
+        conf_lines.insert(2, 'LAB_AUTHOR="Kathara GUI"')
+        conf_lines.insert(3, '')
+        
         for name, device in self.devices.items():
             if device.device_type == 'pc':
                 conf_lines.append(f'{name}[image]="kathara/base"')
             if hasattr(device, 'ip_version') and device.ip_version == '6':
                 conf_lines.append(f'{name}[ipv6]="true"')
+                conf_lines.append(f'{name}[sysctl]="net.ipv6.conf.eth0.accept_ra=2"')
             else:
                 conf_lines.append(f'{name}[ipv6]="false"')
         

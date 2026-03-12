@@ -95,6 +95,11 @@ def export_lab():
     if not conf_lines:
         return jsonify({'success': False, 'error': 'No connections! Connect devices before exporting.'}), 400
     
+    conf_lines.insert(0, f'LAB_DESCRIPTION="Kathara Network Lab - {lab_name}"')
+    conf_lines.insert(1, 'LAB_VERSION=1.0')
+    conf_lines.insert(2, 'LAB_AUTHOR="Kathara GUI"')
+    conf_lines.insert(3, '')
+    
     for device in devices:
         name = device.get('name', '')
         device_type = device.get('type', 'pc')
@@ -105,6 +110,11 @@ def export_lab():
         ip_version = device.get('ip_version', '4')
         if ip_version == '6':
             conf_lines.append(f'{name}[ipv6]="true"')
+            sysctl_val = device.get('sysctl', '')
+            if sysctl_val:
+                conf_lines.append(f'{name}[sysctl]="{sysctl_val}"')
+            else:
+                conf_lines.append(f'{name}[sysctl]="net.ipv6.conf.eth0.accept_ra=2"')
         else:
             conf_lines.append(f'{name}[ipv6]="false"')
     
