@@ -493,6 +493,183 @@ traceroute <destinazione>
 
 ---
 
+# 🦈 Guida Wireshark
+
+## Panoramica
+
+Wireshark è uno strumento di analisi del traffico di rete che permette di catturare e analizzare i pacchetti che transitano nella rete virtuale di Kathara.
+
+## Installazione
+
+### Windows
+1. Scarica Wireshark da https://www.wireshark.org/download.html
+2. Installa il programma
+3. Durante l'installazione, assicurati di installare **Npcap** (richiesto per catturare pacchetti)
+
+### macOS
+```bash
+brew install --cask wireshark
+```
+
+### Linux
+```bash
+sudo apt install wireshark
+```
+
+## Utilizzo con Kathara GUI
+
+### Metodo 1: Pulsante Wireshark (Consigliato)
+
+#### Web GUI
+1. Crea la tua topologia di rete
+2. Clicca sul pulsante **WIRESHARK**
+3. La GUI:
+   - Esporterà il lab con supporto Wireshark
+   - Avvierà il lab
+   - **Aprirà Wireshark automaticamente sul tuo PC**
+   - Mostrerà una guida nella console
+
+#### Desktop GUI
+1. Crea la tua topologia di rete
+2. Clicca sul pulsante **WIRESHARK**
+3. La GUI:
+   - Esporterà il lab con supporto Wireshark
+   - Avvierà il lab
+   - **Aprirà Wireshark automaticamente sul tuo PC**
+   - Mostrerà una guida nella console
+
+### Metodo 2: Manuale
+
+Se preferisci avviare Wireshark manualmente:
+
+1. Esporta il lab con l'opzione Wireshark abilitata
+2. Avvia il lab
+3. Apri Wireshark sul tuo PC
+4. Seleziona l'interfaccia di rete corretta
+
+## Selezione Interfaccia di Rete
+
+### Interfacce Docker/Kathara
+
+In Wireshark, cerca queste interfacce:
+
+| Interfaccia | Rete | Indirizzo IP |
+|-------------|------|---------------|
+| veth* | Docker/Kathara | Varie |
+| eth0 | Network A | 10.0.0.x |
+| eth1 | Network B | 192.168.1.x |
+| eth2 | Network C | 192.168.2.x |
+| eth3 | Network D | 192.168.3.x |
+
+### Come Trovare l'Interfaccia Giusta
+
+1. **Windows**: Cerca interfacce che iniziano con `veth` in Docker Desktop → Containers
+2. **Docker Networks**: 
+   ```bash
+   docker network ls --filter "name=kathara"
+   ```
+3. **Kathara**:
+   ```bash
+   kathara list
+   ```
+
+## Filtri Wireshark
+
+### Filtri Comuni
+
+| Filtro | Descrizione |
+|--------|-------------|
+| `icmp` | Mostra solo pacchetti ping |
+| `tcp` | Mostra solo pacchetti TCP |
+| `udp` | Mostra solo pacchetti UDP |
+| `arp` | Mostra protocollo ARP |
+| `ip.addr==10.0.0.10` | Filtra per indirizzo IP |
+| `ip.src==10.0.0.10` | Filtra per IP sorgente |
+| `ip.dst==10.0.0.10` | Filtra per IP destinazione |
+| `tcp.port==80` | Filtra per porta TCP |
+| `icmp && ip.addr==10.0.0.10` | Ping verso IP specifico |
+
+### Esempi Pratici
+
+```bash
+# Cattura solo ping (ICMP)
+icmp
+
+# Cattura traffico verso un PC specifico
+ip.addr==192.168.1.10
+
+# Cattura solo TCP
+tcp
+
+# Cattura ping da PC1 a PC2
+icmp && ip.src==10.0.0.10 && ip.dst==192.168.2.10
+```
+
+## Analisi dei Pacchetti
+
+### Structura di un Pacchetto
+
+Wireshark mostra i pacchetti in tre riquadri:
+
+1. **Lista Pacchetti** (superiore): Vista sintetica di tutti i pacchetti
+2. **Dettagli Pacchetto** (medio): Structura del pacchetto selezionato
+3. **Dati Pacchetto** (inferiore): Dati esadecimali grezzi
+
+### Protocolli Comuni
+
+| Protocollo | Descrizione | Porta Default |
+|------------|-------------|---------------|
+| ICMP | Ping, ping reply | - |
+| TCP | Trasferimento dati | 80 (HTTP), 443 (HTTPS) |
+| UDP | Trasferimento dati veloce | 53 (DNS) |
+| ARP | Risoluzione indirizzi | - |
+| DHCP | Assegnazione IP automatica | 67/68 |
+
+## Rete Multi-Router: Esempio Pratico
+
+### Topologia
+```
+[PC1: 10.0.0.10] -- [R1] -- [R2] -- [PC2: 192.168.2.10]
+         eth0           eth1       eth0       eth1
+        gw:10.0.0.254  gw:192.168.1.1
+```
+
+### Per catturare il ping da PC1 a PC2:
+
+1. Crea la rete nella GUI
+2. Clicca WIRESHARK
+3. In Wireshark, seleziona l'interfaccia Docker per Network A (10.0.0.x)
+4. Filtra: `icmp && (ip.addr==10.0.0.10 || ip.addr==192.168.2.10)`
+5. Esegui ping: `ping pc1 192.168.2.10`
+6. Osserva i pacchetti ICMP passare attraverso la rete
+
+### Cosa Vedrai
+
+```
+Frame: Pacchetto ICMP da PC1 a PC2
+├── [IP] Source: 10.0.0.10 → Destination: 192.168.2.10
+├── [ICMP] Echo Request (ping)
+└── [Data] Payload del ping
+```
+
+## Troubleshooting
+
+### Nessuna interfaccia disponibile
+- Assicurati che il lab sia avviato: `kathara list`
+- Installa Npcap su Windows
+- Esegui Wireshark come amministratore
+
+### Non vedo i pacchetti
+- Verifica di aver selezionato l'interfaccia corretta
+- Prova a non applicare filtri inizialmente
+- Assicurati che il ping sia in corso
+
+### Interfacce Docker non visibili
+- Docker Desktop deve essere in funzione
+- Verifica i container: `docker ps`
+
+---
+
 # 📁 Struttura del Progetto
 
 ```
