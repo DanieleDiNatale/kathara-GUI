@@ -869,15 +869,26 @@ document.getElementById('wiresharkBtn').addEventListener('click', async () => {
 });
 
 document.getElementById('listBtn').addEventListener('click', async () => {
-    if (!currentLabPath) {
-        log('[WARN] Please export/start the lab first', '#F5A623');
-        return;
-    }
-    const result = await apiCall('/api/lab/list', { lab_path: currentLabPath });
-    if (result.success) {
-        log(result.output || 'No devices running', '#7ED321');
+    const result = await apiCall('/api/devices/list_detailed', {});
+    if (result.success && result.devices.length > 0) {
+        log('', '#888');
+        log('========================================', '#00FFFF');
+        log('       KATHARA DEVICES RUNNING        ', '#00FFFF');
+        log('========================================', '#00FFFF');
+        log('', '#888');
+        log(' NAME          STATUS    ', '#F5A623');
+        log(' ----          ------    ', '#888');
+        result.devices.forEach(device => {
+            const name = device.name.padEnd(14, ' ');
+            log(` ${name}  ${device.status}`, '#7ED321');
+        });
+        log('', '#888');
+        log('Total: ' + result.devices.length + ' device(s)', '#F5A623');
+        log('========================================', '#00FFFF');
+    } else if (result.success && result.devices.length === 0) {
+        log('[INFO] No devices running. Start a lab first.', '#F5A623');
     } else {
-        log(result.error, '#ff0000');
+        log('[ERROR] ' + (result.error || 'Failed to list devices'), '#ff0000');
     }
 });
 

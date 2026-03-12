@@ -475,6 +475,39 @@ def list_devices_simple():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/devices/list_detailed', methods=['GET'])
+def list_devices_detailed():
+    try:
+        result = subprocess.run(
+            ['docker', 'ps', '--filter', 'name=kathara', '--format', '{{.Names}}\t{{.Status}}'],
+            capture_output=True, text=True, timeout=10
+        )
+        devices = []
+        seen = set()
+        for line in result.stdout.strip().split('\n'):
+            if not line.strip():
+                continue
+            parts = line.split('\t')
+            if len(parts) >= 1:
+                full_name = parts[0]
+                status = parts[1] if len(parts) > 1 else 'unknown'
+                name_parts = full_name.split('_')
+                if len(name_parts) >= 3:
+                    device_name = name_parts[2]
+                    if device_name not in seen:
+                        seen.add(device_name)
+                        devices.append({
+                            'name': device_name, 
+                            'status': 'running',
+                            'docker_status': status
+                        })
+        
+        return jsonify({'success': True, 'devices': devices})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/wireshark/open', methods=['POST'])
 def open_wireshark():
     try:
