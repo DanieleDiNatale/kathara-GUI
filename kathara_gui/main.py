@@ -470,23 +470,31 @@ class TopologyScene(QGraphicsScene):
             startup_file = os.path.join(lab_path, f"{name}.startup")
             startup_cmds = []
             
+            ip_version = getattr(device, 'ip_version', '4')
+            
             if device.device_type == 'router':
                 if name in device_interfaces:
                     eth_indices = [k for k in device_interfaces[name].keys() if isinstance(k, int)]
                     for eth_idx in sorted(eth_indices):
                         net_letter = device_interfaces[name][eth_idx]
-                        net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
-                        
-                        routers_on_net = router_networks.get(net_letter, [])
-                        if len(routers_on_net) > 1:
-                            router_idx = network_router_index[net_letter]
-                            network_router_index[net_letter] += 1
-                            router_ip = f"{net_ip}.{1 + router_idx}"
-                        else:
-                            router_ip = f"{net_ip}.254"
                         
                         startup_cmds.append(f"ip link set eth{eth_idx} up")
-                        startup_cmds.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
+                        
+                        if ip_version == '6':
+                            startup_cmds.append(f"# IPv6: router uses link-local (fe80::) automatically")
+                            startup_cmds.append(f"# Router Advertisement enabled for IPv6")
+                        else:
+                            net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                            
+                            routers_on_net = router_networks.get(net_letter, [])
+                            if len(routers_on_net) > 1:
+                                router_idx = network_router_index[net_letter]
+                                network_router_index[net_letter] += 1
+                                router_ip = f"{net_ip}.{1 + router_idx}"
+                            else:
+                                router_ip = f"{net_ip}.254"
+                            
+                            startup_cmds.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
                 
                 my_net_letters = [device_interfaces[name][k] for k in device_interfaces[name].keys() if isinstance(k, int)]
                 for net_letter in router_networks.keys():
@@ -502,11 +510,15 @@ class TopologyScene(QGraphicsScene):
                                             hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.{1 + idx}"
                                         else:
                                             hop_ip = f"{network_ips.get(connected_net, f'192.168.{(ord(connected_net) - 65 + 1)}')}.254"
-                                        startup_cmds.append(f"ip route add {other_net_ip}.0/24 via {hop_ip}")
+                                        if ip_version != '6':
+                                            startup_cmds.append(f"ip route add {other_net_ip}.0/24 via {hop_ip}")
                                         break
                                 break
                 
-                startup_cmds.append("sysctl -w net.ipv4.ip_forward=1")
+                if ip_version == '6':
+                    startup_cmds.append("sysctl -w net.ipv6.conf.all.forwarding=1")
+                else:
+                    startup_cmds.append("sysctl -w net.ipv4.ip_forward=1")
             else:
                 if device.ip_address:
                     if '/' in device.ip_address:
@@ -521,7 +533,7 @@ class TopologyScene(QGraphicsScene):
                 f.write(content.encode('utf-8'))
 
 class IPConfigDialog(QDialog):
-    def __init__(self, device_name, current_ip="", current_gateway="", current_eth="eth0", current_mac="", current_ipv6="", parent=None):
+    def __init__(self, device_name, current_ip="", current_gateway="", current_eth="eth0", current_mac="", current_ipv6="", device_type="pc", parent=None):
         super().__init__(parent)
         self.setWindowTitle(f"Configure - {device_name}")
         self.setModal(True)
@@ -551,17 +563,38 @@ class IPConfigDialog(QDialog):
         self.ip_edit.setPlaceholderText("192.168.1.10")
         form.addRow("IP Address:", self.ip_edit)
         
+        if device_type == 'router':
+            ipv6_placeholder = "Auto (link-local fe80::)"
+            mac_placeholder = "e.g., 00:00:00:00:00:a1"
+            ipv6_hint = "<span style='color:#4A90D9;'>Router uses link-local (fe80::) automatically</span>"
+            mac_hint = "<span style='color:#4A90D9;'>Use a1, b1, c1 for routers (e.g., 00:00:00:00:00:a1)</span>"
+        else:
+            ipv6_placeholder = "2001:db8::1 or leave empty"
+            mac_placeholder = "00:00:00:00:00:01"
+            ipv6_hint = ""
+            mac_hint = ""
+        
         self.ipv6_edit = QLineEdit(current_ipv6)
-        self.ipv6_edit.setPlaceholderText("2001:db8::1")
+        self.ipv6_edit.setPlaceholderText(ipv6_placeholder)
         form.addRow("IPv6 Address:", self.ipv6_edit)
+        
+        if ipv6_hint:
+            hint_ipv6 = QLabel(ipv6_hint)
+            hint_ipv6.setStyleSheet("font-size: 10px;")
+            form.addRow("", hint_ipv6)
         
         self.gateway_edit = QLineEdit(current_gateway)
         self.gateway_edit.setPlaceholderText("192.168.1.254")
         form.addRow("Gateway:", self.gateway_edit)
         
         self.mac_edit = QLineEdit(current_mac)
-        self.mac_edit.setPlaceholderText("00:00:00:00:00:01")
+        self.mac_edit.setPlaceholderText(mac_placeholder)
         form.addRow("MAC Address:", self.mac_edit)
+        
+        if mac_hint:
+            hint_mac = QLabel(mac_hint)
+            hint_mac.setStyleSheet("font-size: 10px;")
+            form.addRow("", hint_mac)
         
         layout.addLayout(form)
         
@@ -1072,7 +1105,7 @@ class MainWindow(QMainWindow):
             if device.device_type in ['hub', 'switch']:
                 self.console.log(f"[INFO] {device.device_type.upper()} cannot have IP address", '#FF6B6B')
                 return
-            dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, device.eth, getattr(device, 'mac_address', ''), getattr(device, 'ipv6_address', ''), self)
+            dialog = IPConfigDialog(device.name, device.ip_address, device.gateway, device.eth, getattr(device, 'mac_address', ''), getattr(device, 'ipv6_address', ''), device.device_type, self)
             if dialog.exec():
                 eth, ip, gateway, mac, ipv6 = dialog.get_values()
                 device.set_ip(eth, ip, gateway)

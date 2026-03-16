@@ -174,23 +174,31 @@ def export_lab():
         
         startup_lines = []
         
+        ip_version = device.get('ip_version', '4')
+        
         if device_type == 'router':
             if name in device_interfaces:
                 eth_indices = [k for k in device_interfaces[name].keys() if isinstance(k, int)]
                 for eth_idx in sorted(eth_indices):
                     net_letter = device_interfaces[name][eth_idx]
-                    net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
-                    
-                    routers_on_net = router_networks.get(net_letter, [])
-                    if len(routers_on_net) > 1:
-                        router_idx = network_router_index[net_letter]
-                        network_router_index[net_letter] += 1
-                        router_ip = f"{net_ip}.{1 + router_idx}"
-                    else:
-                        router_ip = f"{net_ip}.254"
                     
                     startup_lines.append(f"ip link set eth{eth_idx} up")
-                    startup_lines.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
+                    
+                    if ip_version == '6':
+                        startup_lines.append(f"# IPv6: router uses link-local (fe80::) automatically")
+                        startup_lines.append(f"# Router Advertisement enabled for IPv6")
+                    else:
+                        net_ip = network_ips.get(net_letter, f'192.168.{(ord(net_letter) - 65 + 1)}')
+                        
+                        routers_on_net = router_networks.get(net_letter, [])
+                        if len(routers_on_net) > 1:
+                            router_idx = network_router_index[net_letter]
+                            network_router_index[net_letter] += 1
+                            router_ip = f"{net_ip}.{1 + router_idx}"
+                        else:
+                            router_ip = f"{net_ip}.254"
+                        
+                        startup_lines.append(f"ip addr add {router_ip}/24 dev eth{eth_idx}")
             
             my_net_letters = [device_interfaces[name][k] for k in device_interfaces[name].keys() if isinstance(k, int)]
             for net_letter in router_networks.keys():
@@ -210,7 +218,10 @@ def export_lab():
                                     break
                             break
             
-            startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
+            if device_type == 'router' and ip_version == '6':
+                startup_lines.append("sysctl -w net.ipv6.conf.all.forwarding=1")
+            elif device_type == 'router':
+                startup_lines.append("sysctl -w net.ipv4.ip_forward=1")
         else:
             if ip and device_type in ['pc', 'cloud']:
                 if '/' in ip:

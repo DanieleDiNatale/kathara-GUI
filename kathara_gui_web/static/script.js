@@ -682,13 +682,21 @@ function openIPDialog(device) {
                     }
                 }
             } else {
-                const ip = prompt(`Enter IPv6 address for ${device.name} (e.g., 2001:db8::1):`, device.ipv6 || '');
+                let ipv6Hint = 'e.g., 2001:db8::1 or leave empty (auto)';
+                if (device.type === 'router') {
+                    ipv6Hint = 'Leave empty - Router uses link-local (fe80::) automatically';
+                }
+                const ip = prompt(`Enter IPv6 address for ${device.name}:\n${ipv6Hint}:`, device.ipv6 || '');
                 if (ip !== null && ip.trim() !== '') {
                     device.ipv6 = ip.trim();
                 }
             }
             
-            const mac = prompt(`Enter MAC address for ${device.name} (e.g., 00:00:00:00:00:01):`, device.mac || '');
+            let macHint = 'e.g., 00:00:00:00:00:01';
+            if (device.type === 'router') {
+                macHint = 'e.g., 00:00:00:00:00:a1 (use a1, b1, c1 for routers)';
+            }
+            const mac = prompt(`Enter MAC address for ${device.name}:\n${macHint}:`, device.mac || '');
             if (mac !== null && mac.trim() !== '') {
                 device.mac = mac.trim();
             }
